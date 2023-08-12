@@ -757,17 +757,17 @@ luaV_totypval(lua_State *L, int pos, typval_T *tv)
 		    tv->v_type = VAR_JOB;
 		    tv->vval.v_job = *((luaV_Job *) p);
 		    ++tv->vval.v_job->jv_refcount;
-		    lua_pop(L, 4); // MTs
+		    lua_pop(L, 6); // MTs
 		    break;
 		}
 		// check channel
 		luaV_getfield(L, LUAVIM_CHANNEL);
-		if (lua_rawequal(L, -1, -6))
+		if (lua_rawequal(L, -1, -7))
 		{
 		    tv->v_type = VAR_CHANNEL;
 		    tv->vval.v_channel = *((luaV_Channel *) p);
 		    ++tv->vval.v_channel->ch_refcount;
-		    lua_pop(L, 4); // MTs
+		    lua_pop(L, 7); // MTs
 		    break;
 		}
 		lua_pop(L, 6); // MTs
