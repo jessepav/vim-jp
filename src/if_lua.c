@@ -36,6 +36,10 @@ typedef win_T *luaV_Window;
 typedef dict_T *luaV_Dict;
 typedef list_T *luaV_List;
 typedef blob_T *luaV_Blob;
+#ifdef FEAT_JOB_CHANNEL
+typedef job_T *luaV_Job;
+typedef channel_T *luaV_Channel;
+#endif
 typedef struct {
     char_u	*name;	// funcref
     dict_T	*self;	// selfdict
@@ -52,6 +56,10 @@ typedef struct {
 static const char LUAVIM_DICT[] = "dict";
 static const char LUAVIM_LIST[] = "list";
 static const char LUAVIM_BLOB[] = "blob";
+#ifdef FEAT_JOB_CHANNEL
+static const char LUAVIM_JOB[] = "job";
+static const char LUAVIM_CHANNEL[] = "channel";
+#endif
 static const char LUAVIM_FUNCREF[] = "funcref";
 static const char LUAVIM_BUFFER[] = "buffer";
 static const char LUAVIM_WINDOW[] = "window";
@@ -87,6 +95,10 @@ static const char LUA___CALL[] = "__call";
 static luaV_List *luaV_pushlist(lua_State *L, list_T *lis);
 static luaV_Dict *luaV_pushdict(lua_State *L, dict_T *dic);
 static luaV_Blob *luaV_pushblob(lua_State *L, blob_T *blo);
+#ifdef FEAT_JOB_CHANNEL
+static luaV_Job *luaV_pushjob(lua_State *L, job_T *job);
+static luaV_Channel *luaV_pushchannel(lua_State *L, channel_T *chan);
+#endif
 static luaV_Funcref *luaV_pushfuncref(lua_State *L, char_u *name);
 static int luaV_call_lua_func(int argcount, typval_T *argvars, typval_T *rettv, void *state);
 static void luaV_call_lua_func_free(void *state);
@@ -588,6 +600,14 @@ luaV_pushtypval(lua_State *L, typval_T *tv)
 	case VAR_BLOB:
 	    luaV_pushblob(L, tv->vval.v_blob);
 	    break;
+#ifdef FEAT_JOB_CHANNEL
+	case VAR_JOB:
+	    luaV_pushjob(L, tv->vval.v_job);
+	    break;
+	case VAR_CHANNEL:
+	    luaV_pushchannel(L, tv->vval.v_channel);
+	    break;
+#endif
 	default:
 	    lua_pushnil(L);
     }
@@ -729,7 +749,31 @@ luaV_totypval(lua_State *L, int pos, typval_T *tv)
 		    lua_pop(L, 5); // MTs
 		    break;
 		}
+#ifdef FEAT_JOB_CHANNEL
+		// check job
+		luaV_getfield(L, LUAVIM_JOB);
+		if (lua_rawequal(L, -1, -6))
+		{
+		    tv->v_type = VAR_JOB;
+		    tv->vval.v_job = *((luaV_Job *) p);
+		    ++tv->vval.v_job->jv_refcount;
+		    lua_pop(L, 4); // MTs
+		    break;
+		}
+		// check channel
+		luaV_getfield(L, LUAVIM_CHANNEL);
+		if (lua_rawequal(L, -1, -6))
+		{
+		    tv->v_type = VAR_CHANNEL;
+		    tv->vval.v_channel = *((luaV_Channel *) p);
+		    ++tv->vval.v_channel->ch_refcount;
+		    lua_pop(L, 4); // MTs
+		    break;
+		}
+		lua_pop(L, 6); // MTs
+#else
 		lua_pop(L, 4); // MTs
+#endif
 	    }
 	}
 	// FALLTHROUGH
@@ -1294,6 +1338,72 @@ static const luaL_Reg luaV_Blob_mt[] = {
     {NULL, NULL}
 };
 
+#ifdef FEAT_JOB_CHANNEL
+
+// =======   Job type   ========
+
+    static luaV_Job *
+luaV_newjob(lua_State *L, job_T *job)
+{
+    luaV_Job *j = (luaV_Job *) lua_newuserdata(L, sizeof(luaV_Job));
+    *j = job;
+    job->jv_refcount++; // reference in Lua
+    luaV_setudata(L, j); // cache[job] = udata
+    luaV_getfield(L, LUAVIM_JOB);
+    lua_setmetatable(L, -2);
+    return j;
+}
+
+luaV_pushtype(job_T, job, luaV_Job)
+luaV_type_tostring(job, LUAVIM_JOB)
+
+    static int
+luaV_job_gc(lua_State *L)
+{
+    job_T *j = luaV_unbox(L, luaV_Job, 1);
+    job_unref(j);
+    return 0;
+}
+
+static const luaL_Reg luaV_Job_mt[] = {
+    {"__tostring", luaV_job_tostring},
+    {"__gc", luaV_job_gc},
+    {NULL, NULL}
+};
+
+
+// =======   Channel type   ========
+
+    static luaV_Channel *
+luaV_newchannel(lua_State *L, channel_T *chan)
+{
+    luaV_Channel *ch = (luaV_Channel *) lua_newuserdata(L, sizeof(luaV_Channel));
+    *ch = chan;
+    chan->ch_refcount++;  // reference in Lua
+    luaV_setudata(L, chan); // cache[chan] = udata
+    luaV_getfield(L, LUAVIM_CHANNEL);
+    lua_setmetatable(L, -2);
+    return ch;
+}
+
+luaV_pushtype(channel_T, channel, luaV_Channel)
+luaV_type_tostring(channel, LUAVIM_CHANNEL)
+
+    static int
+luaV_channel_gc(lua_State *L)
+{
+    channel_T *ch = luaV_unbox(L, luaV_Channel, 1);
+    channel_unref(ch);
+    return 0;
+}
+
+static const luaL_Reg luaV_Channel_mt[] = {
+    {"__tostring", luaV_channel_tostring},
+    {"__gc", luaV_channel_gc},
+    {NULL, NULL}
+};
+
+#endif
 
 // =======   Funcref type   =======
 
@@ -2166,6 +2276,20 @@ luaV_type(lua_State *L)
 		lua_pushstring(L, "blob");
 		return 1;
 	    }
+#ifdef FEAT_JOB_CHANNEL
+	    luaV_getfield(L, LUAVIM_JOB);
+	    if (lua_rawequal(L, -1, 2))
+	    {
+		lua_pushstring(L, "job");
+		return 1;
+	    }
+	    luaV_getfield(L, LUAVIM_CHANNEL);
+	    if (lua_rawequal(L, -1, 2))
+	    {
+		lua_pushstring(L, "channel");
+		return 1;
+	    }
+#endif
 	    luaV_getfield(L, LUAVIM_FUNCREF);
 	    if (lua_rawequal(L, -1, 2))
 	    {
@@ -2505,6 +2629,14 @@ luaopen_vim(lua_State *L)
     luaV_newmetatable(L, LUAVIM_BLOB);
     lua_pushvalue(L, 1);
     luaV_openlib(L, luaV_Blob_mt, 1);
+#ifdef FEAT_JOB_CHANNEL
+    luaV_newmetatable(L, LUAVIM_JOB);
+    lua_pushvalue(L, 1);
+    luaV_openlib(L, luaV_Job_mt, 1);
+    luaV_newmetatable(L, LUAVIM_CHANNEL);
+    lua_pushvalue(L, 1);
+    luaV_openlib(L, luaV_Channel_mt, 1);
+#endif
     luaV_newmetatable(L, LUAVIM_FUNCREF);
     lua_pushvalue(L, 1);
     luaV_openlib(L, luaV_Funcref_mt, 1);
