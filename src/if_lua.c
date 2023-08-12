@@ -72,13 +72,30 @@ static const char LUA___CALL[] = "__call";
 // most functions are closures with a cache table as first upvalue;
 // get/setudata manage references to vim userdata in cache table through
 // object pointers (light userdata)
-#define luaV_getudata(L, v) \
-    lua_pushlightuserdata((L), (void *) (v)); \
-    lua_rawget((L), lua_upvalueindex(1))
-#define luaV_setudata(L, v) \
-    lua_pushlightuserdata((L), (void *) (v)); \
-    lua_pushvalue((L), -2); \
-    lua_rawset((L), lua_upvalueindex(1))
+
+    static inline void
+luaV_getudata(lua_State *L, void *v)
+{
+    if (lua_isnone(L, lua_upvalueindex(1)))  // the cache doesn't exist for this C call
+	lua_pushnil(L);
+    else
+    {
+	lua_pushlightuserdata(L, v);
+	lua_rawget(L, lua_upvalueindex(1));
+    }
+}
+
+    static inline void
+luaV_setudata(lua_State *L, void *v)
+{
+    if (!lua_isnone(L, lua_upvalueindex(1)))  // ensure the cache exists before trying to set udata
+    {
+	lua_pushlightuserdata(L, v);
+	lua_pushvalue(L, -2);
+	lua_rawset(L, lua_upvalueindex(1));
+    }
+}
+
 #define luaV_getfield(L, s) \
     lua_pushlightuserdata((L), (void *)(s)); \
     lua_rawget((L), LUA_REGISTRYINDEX)
