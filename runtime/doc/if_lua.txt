@@ -168,9 +168,10 @@ Vim evaluation and command execution, and others.
 
 	vim.type({arg})		Returns the type of {arg}. It is equivalent to
 				Lua's "type" function, but returns "list",
-				"dict", "funcref", "buffer", or "window" if
-				{arg} is a list, dictionary, funcref, buffer,
-				or window, respectively. Examples: >
+				"dict", "blob", "job", "channel", "funcref",
+				"buffer", or "window" if {arg} is a list,
+				dictionary, funcref, buffer, or window,
+				respectively. Examples: >
 					:lua l = vim.list()
 					:lua print(type(l), vim.type(l))
 					:" list
@@ -503,10 +504,10 @@ returns the result of the expression. It is semantically equivalent in Lua to:
 	end
 <
 Note that "_A" receives the argument to "luaeval". Lua numbers, strings, and
-list, dict, blob, and funcref userdata are converted to their Vim respective
-types, while Lua booleans are converted to numbers. An error is thrown if
-conversion of any of the remaining Lua types, including userdata other than
-lists, dicts, blobs, and funcrefs, is attempted.
+list, dict, blob, job, channel, and funcref userdata are converted to their
+Vim respective types, while Lua booleans are converted to numbers. An error is
+thrown if conversion of any of the remaining Lua types, including userdata
+other than lists, dicts, blobs, jobs, channels, and funcrefs, is attempted.
 
 Examples: >
 
