@@ -587,7 +587,7 @@ CC = gcc
 # When using -g with some older versions of Linux you might get a
 # statically linked executable.
 # When not defined, configure will try to use -O2 for gcc and -O for others.
-CFLAGS = -g -O
+CFLAGS = -g -Og -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0
 #CFLAGS = -O
 
 # Optimization limits - depends on the compiler.  Automatic check in configure
