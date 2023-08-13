@@ -1,0 +1,4 @@
+set directories /home/jpavel/Code/Source/lua-5.1.5/src /home/jpavel/Temp/Misc1/vim-luajobchannel/src
+set args --clean -c 'luafile /home/jpavel/Temp/testjc.lua'
+break luaV_pushjob
+# break if_lua.c:79
