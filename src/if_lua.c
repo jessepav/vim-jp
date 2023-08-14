@@ -96,7 +96,7 @@ luaV_setudata(lua_State *L, void *v)
 {
     lua_pushlightuserdata(L, (void *) LUAVIM_UDATA_CACHE);
     lua_rawget(L, LUA_REGISTRYINDEX);  // cache table is at -1
-    lua_pushlightuserdata(L, v);       // ...now at -2
+    lua_pushlightuserdata(L, v);       // v is the key (cache now at -2)
     lua_pushvalue(L, -3);	       // copy the userdata (cache at -3)
     lua_rawset(L, -3);		       // consumes two stack items
     lua_pop(L, 1);		       // and remove the cache table
@@ -1371,7 +1371,7 @@ luaV_newjob(lua_State *L, job_T *job)
     luaV_Job *j = (luaV_Job *) lua_newuserdata(L, sizeof(luaV_Job));
     *j = job;
     job->jv_refcount++; // reference in Lua
-    luaV_setudata(L, j); // cache[job] = udata
+    luaV_setudata(L, job); // cache[job] = udata
     luaV_getfield(L, LUAVIM_JOB);
     lua_setmetatable(L, -2);
     return j;
