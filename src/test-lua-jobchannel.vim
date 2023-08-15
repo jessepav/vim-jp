@@ -1,12 +1,27 @@
+function VimCallback1(job, status)
+  echo typename(a:job) .. ", " .. a:status
+  echo "VimCallback1 done"
+endfunction
+
 lua <<EOF
-job = vim.fn.job_start('echo Hi',
-        vim.dict {exit_cb = function(job, status) print("Lua callback:", vim.type(job), status) end })
+
+--[[
+local LuaCallback1 = function(job, status)
+  print(vim.type(job), status)
+  print("Lua callback 1 done")
+end
+--]]
+
+--[[
+local job = vim.fn.job_start('echo Hi',
+               vim.dict {exit_cb = 'VimCallback1'})
+--]]
+
+--[[
+vim.fn.job_start('echo Hi',
+        vim.dict {exit_cb = 'VimCallback1'})
+--]]
+
+vim.fn.job_start('echo Hi')
+
 EOF
-
-echom typename(luaeval('job'))
-echom luaeval('job')
-lua job = nil
-
-" exe "sleep " .. rand() % 5
-call getchar()
-quit
