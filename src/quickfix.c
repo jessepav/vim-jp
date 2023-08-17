@@ -50,7 +50,11 @@ struct qfline_S
 /*
  * There is a stack of error lists.
  */
-#define LISTCOUNT   10
+#ifdef QUICKFIX_LISTCOUNT
+#  define LISTCOUNT   QUICKFIX_LISTCOUNT
+#else
+#  define LISTCOUNT   10
+#endif
 #define INVALID_QFIDX (-1)
 #define INVALID_QFBUFNR (0)
 

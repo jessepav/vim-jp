@@ -639,6 +639,9 @@ AUTOCONF ?= autoconf
 # NBDEBUG - debugging the netbeans interface.
 #EXTRA_DEFS = -DNBDEBUG
 
+# QUICKFIX_LISTCOUNT - set the size of the quickfix and location list history
+#EXTRA_DEFS = -DQUICKFIX_LISTCOUNT=10
+
 # }}}
 
 # LINT - for running lint
