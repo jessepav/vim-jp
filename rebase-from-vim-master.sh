@@ -10,11 +10,10 @@ elif [[ "$branch" == "master" ]]; then
     exit 1
 fi
 
-if [[ $(git rev-parse master) != $(git rev-parse origin/master) ]]; then
-    echo "Rebasing master onto origin/master..."
-    git rebase origin/master master
-else
-    echo "master already up-to-date with origin/master"
-fi
-git rebase vim/master master
+echo "Setting master to origin/master..."
+git branch --no-track -f master origin/master
+echo "Merging vim/master..."
+git co master
+git merge --no-edit vim/master
+echo "Rebasing $branch onto master..."
 git rebase master $branch
