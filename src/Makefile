@@ -958,6 +958,7 @@ TOOLS = xxd/xxd$(EXEEXT)
 #
 # Uncomment the next line to install Vim in your home directory.
 #prefix = $(HOME)
+prefix = /opt/vim9
 
 ### exec_prefix	is the top directory for the executable (default $(prefix))
 #
