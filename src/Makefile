@@ -353,7 +353,7 @@ CClink = $(CC)
 #CONF_OPT_GUI = --enable-gui=gtk2 --disable-gtktest
 #CONF_OPT_GUI = --enable-gui=gnome2
 #CONF_OPT_GUI = --enable-gui=gnome2 --disable-gtktest
-#CONF_OPT_GUI = --enable-gui=gtk3
+CONF_OPT_GUI = --enable-gui=gtk3
 #CONF_OPT_GUI = --enable-gui=gtk3 --disable-gtktest
 #CONF_OPT_GUI = --enable-gui=motif
 #CONF_OPT_GUI = --enable-gui=motif --with-motif-lib="-static -lXm -shared"
@@ -389,10 +389,10 @@ CClink = $(CC)
 # This requires at least "normal" features, "tiny" doesn't work.
 #CONF_OPT_LUA = --enable-luainterp
 #CONF_OPT_LUA = --enable-luainterp=dynamic
-#CONF_OPT_LUA = --enable-luainterp --with-luajit
+CONF_OPT_LUA = --enable-luainterp --with-luajit
 #CONF_OPT_LUA = --enable-luainterp=dynamic --with-luajit
 # Lua installation dir (when not set uses $LUA_PREFIX or defaults to /usr)
-#CONF_OPT_LUA_PREFIX = --with-lua-prefix=/usr/local
+CONF_OPT_LUA_PREFIX = --with-lua-prefix=/usr/local
 
 # MZSCHEME
 # Uncomment this when you want to include the MzScheme interface.
@@ -438,7 +438,7 @@ CClink = $(CC)
 #CONF_OPT_PYTHON = --enable-pythoninterp
 #CONF_OPT_PYTHON = --enable-pythoninterp --with-python-command=python2.7
 #CONF_OPT_PYTHON = --enable-pythoninterp=dynamic
-#CONF_OPT_PYTHON3 = --enable-python3interp
+CONF_OPT_PYTHON3 = --enable-python3interp
 #CONF_OPT_PYTHON3 = --enable-python3interp --with-python3-command=python3.6
 #CONF_OPT_PYTHON3 = --enable-python3interp=dynamic
 
@@ -579,7 +579,7 @@ CClink = $(CC)
 # another compiler.  It is wise to run 'make reconfig' to start all over
 # again.
 #CC = cc
-#CC = gcc
+CC = gcc
 #CC = clang
 
 # COMPILER FLAGS - change as you please. Either before running {{{1
@@ -641,6 +641,7 @@ AUTOCONF ?= autoconf
 
 # QUICKFIX_LISTCOUNT - set the size of the quickfix and location list history
 #EXTRA_DEFS = -DQUICKFIX_LISTCOUNT=10
+EXTRA_DEFS = -DQUICKFIX_LISTCOUNT=16
 
 # }}}
 
@@ -957,7 +958,6 @@ TOOLS = xxd/xxd$(EXEEXT)
 ### prefix	the top directory for the data (default "/usr/local")
 #
 # Uncomment the next line to install Vim in your home directory.
-#prefix = $(HOME)
 prefix = /opt/vim9
 
 ### exec_prefix	is the top directory for the executable (default $(prefix))
