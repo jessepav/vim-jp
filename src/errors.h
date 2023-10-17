@@ -3539,6 +3539,8 @@ EXTERN char e_cannot_lock_object_variable_str[]
 EXTERN char e_cannot_lock_class_variable_str[]
 	INIT(= N_("E1392: Cannot (un)lock class variable \"%s\" in class \"%s\""));
 #endif
+EXTERN char e_string_or_none_required_for_argument_nr[]
+	INIT(= N_("E1393: String or v:none required for argument %d"));
 // E1393 - E1499 unused (reserved for Vim9 class support)
 EXTERN char e_cannot_mix_positional_and_non_positional_str[]
 	INIT(= N_("E1500: Cannot mix positional and non-positional arguments: %s"));
@@ -3559,4 +3561,4 @@ EXTERN char e_aptypes_is_null_nr_str[]
 EXTERN char e_xattr_e2big[]
 	INIT(= N_("E1508: Size of the extended attribute value is larger than the maximum size allowed"));
 EXTERN char e_xattr_other[]
-	INIT(= N_("E1509: Error occured when reading or writing extended attribute"));
+	INIT(= N_("E1509: Error occurred when reading or writing extended attribute"));
