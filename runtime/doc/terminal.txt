@@ -1464,20 +1464,20 @@ If there is no g:termdebug_config you can use: >
 <
 Mappings ~
 					*termdebug_map_K* *termdebug-mappings*
-The K key is normally mapped to |:Evaluate| unless there already exists a
-buffer local mapping to K |map-local|.  If you do not want this use: >
+The K key is normally mapped to |:Evaluate| unless a buffer local (|:map-local|)
+mapping to K already exists.  If you do not want this use: >
 	let g:termdebug_config['map_K'] = 0
 If there is no g:termdebug_config you can use: >
 	let g:termdebug_map_K = 0
 <
 						*termdebug_map_minus*
-The - key is normally mapped to |:Down| unless there already exists a buffer
-local mapping to the - key.  If you do not want this use: >
+The - key is normally mapped to |:Down| unless a buffer local mapping to the -
+key already exists.  If you do not want this use: >
 	let g:termdebug_config['map_minus'] = 0
 <
 						*termdebug_map_plus*
-The + key is normally mapped to |:Up| unless there already exists a buffer
-local mapping to the + key.  If you do not want this use: >
+The + key is normally mapped to |:Up| unless a buffer local mapping to the +
+key already exists.  If you do not want this use: >
 	let g:termdebug_config['map_plus'] = 0
 <
 						*termdebug_disasm_window*
@@ -1487,7 +1487,7 @@ If you want the Asm window shown by default, set the "disasm_window" flag to
 	let g:termdebug_config['disasm_window_height'] = 15
 If there is no g:termdebug_config you can use: >
 	let g:termdebug_disasm_window = 15
-Any value greater than 1 will set the Asm window height to that value.  
+Any value greater than 1 will set the Asm window height to that value.
 If the current window has enough horizontal space, it will be vertically split
 and the Asm window will be shown side by side with the source code window (and
 the height option won't be used).
@@ -1588,9 +1588,9 @@ If there is no g:termdebug_config you can use: >
 
 Change default signs ~
 							*termdebug_signs*
-Termdebug uses the last two characters of the breakpoint ID in the
-signcolumn to represent breakpoints. For example, breakpoint ID 133
-will be displayed as `33`.
+Termdebug uses the hex number of the breakpoint ID in the signcolumn to
+represent breakpoints. if it is greater than "0xFF", then it will be displayed
+as "F+", due to we really only have two screen cells for the sign.
 
 If you want to customize the breakpoint signs: >
 	let g:termdebug_config['sign'] = '>>'
