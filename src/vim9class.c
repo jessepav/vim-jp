@@ -1305,6 +1305,24 @@ add_classfuncs_objmethods(
 }
 
 /*
+ * Return the end of the class name starting at "arg".  Valid characters in a
+ * class name are alphanumeric characters and "_".  Also handles imported class
+ * names.
+ */
+    static char_u *
+find_class_name_end(char_u *arg)
+{
+    char_u *end = arg;
+
+    while (ASCII_ISALNUM(*end) || *end == '_'
+	    || (*end == '.' && (ASCII_ISALNUM(end[1]) || end[1] == '_')))
+	++end;
+
+    return end;
+}
+
+
+/*
  * Handle ":class" and ":abstract class" up to ":endclass".
  * Handle ":interface" up to ":endinterface".
  */
@@ -1383,7 +1401,8 @@ ex_class(exarg_T *eap)
 		goto early_ret;
 	    }
 	    arg = skipwhite(arg + 7);
-	    char_u *end = find_name_end(arg, NULL, NULL, FNE_CHECK_START);
+
+	    char_u *end = find_class_name_end(arg);
 	    if (!IS_WHITE_OR_NUL(*end))
 	    {
 		semsg(_(e_white_space_required_after_name_str), arg);
@@ -1413,8 +1432,7 @@ ex_class(exarg_T *eap)
 
 	    for (;;)
 	    {
-		char_u *impl_end = find_name_end(arg, NULL, NULL,
-							      FNE_CHECK_START);
+		char_u *impl_end = find_class_name_end(arg);
 		if ((!IS_WHITE_OR_NUL(*impl_end) && *impl_end != ',')
 			|| (*impl_end == ','
 			    && !IS_WHITE_OR_NUL(*(impl_end + 1))))
@@ -1540,9 +1558,9 @@ early_ret:
 	    has_public = TRUE;
 	    p = skipwhite(line + 6);
 
-	    if (STRNCMP(p, "this", 4) != 0 && STRNCMP(p, "static", 6) != 0)
+	    if (STRNCMP(p, "var", 3) != 0 && STRNCMP(p, "static", 6) != 0)
 	    {
-		emsg(_(e_public_must_be_followed_by_this_or_static));
+		emsg(_(e_public_must_be_followed_by_var_or_static));
 		break;
 	    }
 	}
@@ -1597,29 +1615,38 @@ early_ret:
 	    }
 	    has_static = TRUE;
 	    p = skipwhite(ps + 6);
+
+	    if (STRNCMP(p, "var", 3) != 0 && STRNCMP(p, "def", 3) != 0)
+	    {
+		emsg(_(e_static_must_be_followed_by_var_or_def));
+		break;
+	    }
 	}
 
 	// object members (public, read access, private):
-	//	"this._varname"
-	//	"this.varname"
-	//	"public this.varname"
-	if (STRNCMP(p, "this", 4) == 0)
+	//	"var _varname"
+	//	"var varname"
+	//	"public var varname"
+	// class members (public, read access, private):
+	//	"static var _varname"
+	//	"static var varname"
+	//	"public static var varname"
+	if (checkforcmd(&p, "var", 3))
 	{
-	    if (p[4] != '.' || !eval_isnamec1(p[5]))
-	    {
-		semsg(_(e_invalid_object_variable_declaration_str), p);
-		break;
-	    }
-	    if (has_static)
-	    {
-		emsg(_(e_static_cannot_be_followed_by_this));
-		break;
-	    }
-	    char_u *varname = p + 5;
+	    char_u *varname = p;
 	    char_u *varname_end = NULL;
 	    type_T *type = NULL;
 	    char_u *init_expr = NULL;
 	    int	    has_type = FALSE;
+
+	    if (!eval_isnamec1(*p))
+	    {
+		if (has_static)
+		    semsg(_(e_invalid_class_variable_declaration_str), line);
+		else
+		    semsg(_(e_invalid_object_variable_declaration_str), line);
+		break;
+	    }
 
 	    if (!is_class && *varname == '_')
 	    {
@@ -1644,7 +1671,7 @@ early_ret:
 		vim_free(init_expr);
 		break;
 	    }
-	    if (add_member(&objmembers, varname, varname_end,
+	    if (add_member(has_static ? &classmembers : &objmembers, varname, varname_end,
 				has_public, has_type, type, init_expr) == FAIL)
 	    {
 		vim_free(init_expr);
@@ -1743,42 +1770,6 @@ early_ret:
 		    ((ufunc_T **)fgap->ga_data)[fgap->ga_len] = uf;
 		    ++fgap->ga_len;
 		}
-	    }
-	}
-
-	// class members
-	else if (has_static)
-	{
-	    // class members (public, read access, private):
-	    //	"static _varname"
-	    //	"static varname"
-	    //	"public static varname"
-	    char_u  *varname = p;
-	    char_u  *varname_end = NULL;
-	    int	    has_type = FALSE;
-	    type_T  *type = NULL;
-	    char_u  *init_expr = NULL;
-
-	    if (parse_member(eap, line, varname, has_public,
-		      &varname_end, &has_type, &type_list, &type,
-		      &init_expr) == FAIL)
-		break;
-	    if (is_reserved_varname(varname, varname_end))
-	    {
-		vim_free(init_expr);
-		break;
-	    }
-	    if (is_duplicate_variable(&classmembers, &objmembers, varname,
-								varname_end))
-	    {
-		vim_free(init_expr);
-		break;
-	    }
-	    if (add_member(&classmembers, varname, varname_end,
-			      has_public, has_type, type, init_expr) == FAIL)
-	    {
-		vim_free(init_expr);
-		break;
 	    }
 	}
 
@@ -2324,7 +2315,7 @@ call_oc_method(
     }
 
     char_u *argp = name_end;
-    int ret = get_func_arguments(&argp, evalarg, 0, argvars, &argcount);
+    int ret = get_func_arguments(&argp, evalarg, 0, argvars, &argcount, FALSE);
     if (ret == FAIL)
 	return FAIL;
 
