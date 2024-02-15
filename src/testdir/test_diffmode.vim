@@ -871,8 +871,8 @@ func VerifyInternal(buf, dumpfile, extra)
 endfunc
 
 func Test_diff_screen()
-  if has('osx') && !empty($CI) && system('uname -m') =~# 'arm64'
-    throw 'Skipped: FIXME: This test fails on M1 Mac on GitHub Actions'
+  if has('osxdarwin') && system('diff --version') =~ '^Apple diff'
+    throw 'Skipped: unified diff does not work properly on this macOS version'
   endif
 
   let g:test_is_flaky = 1
@@ -1133,7 +1133,7 @@ func Test_diff_breakindent_after_filler()
   CheckScreendump
 
   let lines =<< trim END
-    set laststatus=0 diffopt+=followwrap breakindent
+    set laststatus=0 diffopt+=followwrap breakindent breakindentopt=min:0
     call setline(1, ['a', '  ' .. repeat('c', 50)])
     vnew
     call setline(1, ['a', 'b', '  ' .. repeat('c', 50)])
@@ -1795,10 +1795,12 @@ def Test_diff_func()
                diff(['abcd'], ['abc'], {output: 'unified'}))
   assert_equal([{from_idx: 0, from_count: 1, to_idx: 0, to_count: 1}],
                diff(['abcd'], ['abc'], {output: 'indices'}))
-  assert_equal("@@ -1 +1 @@\n-abc\n+abx\n",
-               diff(['abc'], ['abx'], {output: 'unified'}))
+  var diff_unified: string = diff(['abc'], ['abx'], {output: 'unified'})
+  assert_equal("@@ -1 +1 @@\n-abc\n+abx\n", diff_unified)
+  var diff_indices: list<dict<number>> =
+    diff(['abc'], ['abx'], {output: 'indices'})
   assert_equal([{from_idx: 0, from_count: 1, to_idx: 0, to_count: 1}],
-               diff(['abc'], ['abx'], {output: 'indices'}))
+               diff_indices)
 
   # partial string modification at the start and at the end.
   var fromlist =<< trim END
@@ -1827,8 +1829,8 @@ def Test_diff_func()
   END
   assert_equal("@@ -1 +1 @@\n-one two\n+one abc two\n@@ -3 +3 @@\n-five abc six\n+five six\n",
                diff(fromlist, tolist, {output: 'unified'}))
-  assert_equal([{from_idx: 0, from_count: 1, to_idx: 0, to_count: 1},
-                {from_idx: 2, from_count: 1, to_idx: 2, to_count: 1}],
+  assert_equal([{'from_count': 1, 'to_idx': 0, 'to_count': 1, 'from_idx': 0},
+                {'from_count': 1, 'to_idx': 2, 'to_count': 1, 'from_idx': 2}],
                diff(fromlist, tolist, {output: 'indices'}))
 
   # add/remove blank lines
@@ -1887,11 +1889,68 @@ def Test_diff_func()
   assert_equal('', diff([], [], {output: 'unified'}))
   assert_equal([], diff([], [], {output: 'indices'}))
 
+  # If 'diffexpr' is set, it should not be used for diff()
+  def MyDiffExpr()
+  enddef
+  var save_diffexpr = &diffexpr
+  :set diffexpr=MyDiffExpr()
+  assert_equal("@@ -1 +1 @@\n-abc\n+\n",
+               diff(['abc'], [''], {output: 'unified'}))
+  assert_equal([{'from_idx': 0, 'from_count': 1, 'to_idx': 0, 'to_count': 1}],
+               diff(['abc'], [''], {output: 'indices'}))
+  assert_equal('MyDiffExpr()', &diffexpr)
+  &diffexpr = save_diffexpr
+
+  # try different values for unified diff 'context'
+  assert_equal("@@ -0,0 +1 @@\n+x\n",
+               diff(['a', 'b', 'c'], ['x', 'a', 'b', 'c']))
+  assert_equal("@@ -0,0 +1 @@\n+x\n",
+               diff(['a', 'b', 'c'], ['x', 'a', 'b', 'c'], {context: 0}))
+  assert_equal("@@ -1 +1,2 @@\n+x\n a\n",
+               diff(['a', 'b', 'c'], ['x', 'a', 'b', 'c'], {context: 1}))
+  assert_equal("@@ -1,2 +1,3 @@\n+x\n a\n b\n",
+               diff(['a', 'b', 'c'], ['x', 'a', 'b', 'c'], {context: 2}))
+  assert_equal("@@ -1,3 +1,4 @@\n+x\n a\n b\n c\n",
+               diff(['a', 'b', 'c'], ['x', 'a', 'b', 'c'], {context: 3}))
+  assert_equal("@@ -1,3 +1,4 @@\n+x\n a\n b\n c\n",
+               diff(['a', 'b', 'c'], ['x', 'a', 'b', 'c'], {context: 4}))
+  assert_equal("@@ -0,0 +1 @@\n+x\n",
+               diff(['a', 'b', 'c'], ['x', 'a', 'b', 'c'], {context: -1}))
+
   # Error cases
   assert_fails('call diff({}, ["a"])', 'E1211:')
   assert_fails('call diff(["a"], {})', 'E1211:')
   assert_fails('call diff(["a"], ["a"], [])', 'E1206:')
   assert_fails('call diff(["a"], ["a"], {output: "xyz"})', 'E106: Unsupported diff output format: xyz')
+  assert_fails('call diff(["a"], ["a"], {context: []})', 'E745: Using a List as a Number')
 enddef
+
+" Test for using the diff() function with 'diffexpr'
+func Test_diffexpr_with_diff_func()
+  CheckScreendump
+
+  let lines =<< trim END
+    def DiffFuncExpr()
+      var in: list<string> = readfile(v:fname_in)
+      var new: list<string> = readfile(v:fname_new)
+      var out: string = diff(in, new)
+      writefile(split(out, "\n"), v:fname_out)
+    enddef
+    set diffexpr=DiffFuncExpr()
+
+    edit Xdifffunc1.txt
+    diffthis
+    vert split Xdifffunc2.txt
+    diffthis
+  END
+  call writefile(lines, 'XsetupDiffFunc.vim', 'D')
+
+  call writefile(['zero', 'one', 'two', 'three'], 'Xdifffunc1.txt', 'D')
+  call writefile(['one', 'twox', 'three', 'four'], 'Xdifffunc2.txt', 'D')
+
+  let buf = RunVimInTerminal('-S XsetupDiffFunc.vim', {'rows': 12})
+  call VerifyScreenDump(buf, 'Test_difffunc_diffexpr_1', {})
+  call StopVimInTerminal(buf)
+endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
