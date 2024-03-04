@@ -986,6 +986,7 @@ arg_len1(type_T *type, type_T *decl_type UNUSED, argcontext_T *context)
 	    || type->tt_type == VAR_BLOB
 	    || type->tt_type == VAR_LIST
 	    || type->tt_type == VAR_DICT
+	    || type->tt_type == VAR_OBJECT
 	    || type_any_or_unknown(type))
 	return OK;
 
@@ -1151,6 +1152,7 @@ static argcheck_T arg3_buffer_string_dict[] = {arg_buffer, arg_string, arg_dict_
 static argcheck_T arg3_dict_number_number[] = {arg_dict_any, arg_number, arg_number};
 static argcheck_T arg3_diff[] = {arg_list_string, arg_list_string, arg_dict_any};
 static argcheck_T arg3_list_string_dict[] = {arg_list_any, arg_string, arg_dict_any};
+static argcheck_T arg3_list_list_dict[] = {arg_list_any, arg_list_any, arg_dict_any};
 static argcheck_T arg3_lnum_number_bool[] = {arg_lnum, arg_number, arg_bool};
 static argcheck_T arg3_number[] = {arg_number, arg_number, arg_number};
 static argcheck_T arg3_number_any_dict[] = {arg_number, arg_any, arg_dict_any};
@@ -2132,7 +2134,7 @@ static funcentry_T global_functions[] =
 			ret_getreg,	    f_getreg},
     {"getreginfo",	0, 1, FEARG_1,	    arg1_string,
 			ret_dict_any,	    f_getreginfo},
-    {"getregion",	3, 3, FEARG_1,	    arg3_string,
+    {"getregion",	2, 3, FEARG_1,	    arg3_list_list_dict,
 			ret_list_string,    f_getregion},
     {"getregtype",	0, 1, FEARG_1,	    arg1_string,
 			ret_string,	    f_getregtype},
@@ -3980,7 +3982,7 @@ f_empty(typval_T *argvars, typval_T *rettv)
 	    n = argvars[0].vval.v_class != NULL;
 	    break;
 	case VAR_OBJECT:
-	    n = argvars[0].vval.v_object != NULL;
+	    n = object_empty(argvars[0].vval.v_object);
 	    break;
 
 	case VAR_BLOB:
@@ -5491,41 +5493,43 @@ f_getregion(typval_T *argvars, typval_T *rettv)
     int			inclusive = TRUE;
     int			fnum = -1;
     pos_T		p1, p2;
-    pos_T		*fp = NULL;
-    char_u		*pos1, *pos2, *type;
+    char_u		*type;
+    char_u		default_type[] = "v";
     int			save_virtual = -1;
     int			l;
     int			region_type = -1;
-    int			is_visual;
+    int			is_select_exclusive;
 
     if (rettv_list_alloc(rettv) == FAIL)
 	return;
 
-    if (check_for_string_arg(argvars, 0) == FAIL
-	    || check_for_string_arg(argvars, 1) == FAIL
-	    || check_for_string_arg(argvars, 2) == FAIL)
+    if (check_for_list_arg(argvars, 0) == FAIL
+	    || check_for_list_arg(argvars, 1) == FAIL
+	    || check_for_opt_dict_arg(argvars, 2) == FAIL)
 	return;
 
-    // NOTE: var2fpos() returns static pointer.
-    fp = var2fpos(&argvars[0], TRUE, &fnum, FALSE);
-    if (fp == NULL || (fnum >= 0 && fnum != curbuf->b_fnum))
+    if (list2fpos(&argvars[0], &p1, &fnum, NULL, FALSE) != OK
+	    || (fnum >= 0 && fnum != curbuf->b_fnum))
 	return;
-    p1 = *fp;
 
-    fp = var2fpos(&argvars[1], TRUE, &fnum, FALSE);
-    if (fp == NULL || (fnum >= 0 && fnum != curbuf->b_fnum))
+    if (list2fpos(&argvars[1], &p2, &fnum, NULL, FALSE) != OK
+	    || (fnum >= 0 && fnum != curbuf->b_fnum))
 	return;
-    p2 = *fp;
 
-    pos1 = tv_get_string(&argvars[0]);
-    pos2 = tv_get_string(&argvars[1]);
-    type = tv_get_string(&argvars[2]);
-
-    is_visual = (pos1[0] == 'v' && pos1[1] == NUL)
-	|| (pos2[0] == 'v' && pos2[1] == NUL);
-
-    if (is_visual && !VIsual_active)
-	return;
+    if (argvars[2].v_type == VAR_DICT)
+    {
+	is_select_exclusive = dict_get_bool(
+		argvars[2].vval.v_dict, "exclusive", *p_sel == 'e');
+	type = dict_get_string(
+		argvars[2].vval.v_dict, "type", FALSE);
+	if (type == NULL)
+	    type = default_type;
+    }
+    else
+    {
+	is_select_exclusive = *p_sel == 'e';
+	type = default_type;
+    }
 
     if (type[0] == 'v' && type[1] == NUL)
 	region_type = MCHAR;
@@ -5538,6 +5542,10 @@ f_getregion(typval_T *argvars, typval_T *rettv)
 
     save_virtual = virtual_op;
     virtual_op = virtual_active();
+
+    // NOTE: Adjust is needed.
+    p1.col--;
+    p2.col--;
 
     if (!LT_POS(p1, p2))
     {
@@ -5552,7 +5560,7 @@ f_getregion(typval_T *argvars, typval_T *rettv)
     if (region_type == MCHAR)
     {
 	// handle 'selection' == "exclusive"
-	if (*p_sel == 'e' && !EQUAL_POS(p1, p2))
+	if (is_select_exclusive && !EQUAL_POS(p1, p2))
 	{
 	    if (p2.coladd > 0)
 		p2.coladd--;
@@ -5590,7 +5598,7 @@ f_getregion(typval_T *argvars, typval_T *rettv)
 	oa.start = p1;
 	oa.end = p2;
 	oa.start_vcol = MIN(sc1, sc2);
-	if (*p_sel == 'e' && ec1 < sc2 && 0 < sc2 && ec2 > ec1)
+	if (is_select_exclusive && ec1 < sc2 && 0 < sc2 && ec2 > ec1)
 	    oa.end_vcol = sc2 - 1;
 	else
 	    oa.end_vcol = MAX(ec1, ec2);
@@ -7824,6 +7832,9 @@ f_len(typval_T *argvars, typval_T *rettv)
 	case VAR_DICT:
 	    rettv->vval.v_number = dict_len(argvars[0].vval.v_dict);
 	    break;
+	case VAR_OBJECT:
+	    rettv->vval.v_number = object_len(argvars[0].vval.v_object);
+	    break;
 	case VAR_UNKNOWN:
 	case VAR_ANY:
 	case VAR_VOID:
@@ -7836,7 +7847,6 @@ f_len(typval_T *argvars, typval_T *rettv)
 	case VAR_CHANNEL:
 	case VAR_INSTR:
 	case VAR_CLASS:
-	case VAR_OBJECT:
 	case VAR_TYPEALIAS:
 	    emsg(_(e_invalid_type_for_len));
 	    break;
