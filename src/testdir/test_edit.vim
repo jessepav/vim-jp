@@ -6,8 +6,6 @@ endif
 
 source check.vim
 source screendump.vim
-
-" Needed for testing basic rightleft: Test_edit_rightleft
 source view_util.vim
 
 " Needs to come first until the bug in getchar() is
@@ -1296,15 +1294,15 @@ func Test_edit_PAGEUP_PAGEDOWN()
   call feedkeys("i\<PageDown>\<esc>", 'tnix')
   call assert_equal([0, 30, 1, 0], getpos('.'))
   call feedkeys("A\<PageUp>\<esc>", 'tnix')
-  call assert_equal([0, 29, 1, 0], getpos('.'))
+  call assert_equal([0, 30, 1, 0], getpos('.'))
   call feedkeys("A\<PageUp>\<esc>", 'tnix')
-  call assert_equal([0, 21, 1, 0], getpos('.'))
+  call assert_equal([0, 23, 1, 0], getpos('.'))
   call feedkeys("A\<PageUp>\<esc>", 'tnix')
-  call assert_equal([0, 13, 1, 0], getpos('.'))
+  call assert_equal([0, 15, 1, 0], getpos('.'))
   call feedkeys("A\<PageUp>\<esc>", 'tnix')
-  call assert_equal([0, 5, 1, 0], getpos('.'))
+  call assert_equal([0, 10, 1, 0], getpos('.'))
   call feedkeys("A\<PageUp>\<esc>", 'tnix')
-  call assert_equal([0, 5, 11, 0], getpos('.'))
+  call assert_equal([0, 10, 11, 0], getpos('.'))
   " <S-Up> is the same as <PageUp>
   " <S-Down> is the same as <PageDown>
   call cursor(1, 1)
@@ -1319,28 +1317,28 @@ func Test_edit_PAGEUP_PAGEDOWN()
   call feedkeys("i\<S-Down>\<esc>", 'tnix')
   call assert_equal([0, 30, 1, 0], getpos('.'))
   call feedkeys("A\<S-Up>\<esc>", 'tnix')
-  call assert_equal([0, 29, 1, 0], getpos('.'))
+  call assert_equal([0, 30, 1, 0], getpos('.'))
   call feedkeys("A\<S-Up>\<esc>", 'tnix')
-  call assert_equal([0, 21, 1, 0], getpos('.'))
+  call assert_equal([0, 23, 1, 0], getpos('.'))
   call feedkeys("A\<S-Up>\<esc>", 'tnix')
-  call assert_equal([0, 13, 1, 0], getpos('.'))
+  call assert_equal([0, 15, 1, 0], getpos('.'))
   call feedkeys("A\<S-Up>\<esc>", 'tnix')
-  call assert_equal([0, 5, 1, 0], getpos('.'))
+  call assert_equal([0, 10, 1, 0], getpos('.'))
   call feedkeys("A\<S-Up>\<esc>", 'tnix')
-  call assert_equal([0, 5, 11, 0], getpos('.'))
+  call assert_equal([0, 10, 11, 0], getpos('.'))
   set nostartofline
   call cursor(30, 11)
   norm! zt
   call feedkeys("A\<PageUp>\<esc>", 'tnix')
-  call assert_equal([0, 29, 11, 0], getpos('.'))
+  call assert_equal([0, 30, 11, 0], getpos('.'))
   call feedkeys("A\<PageUp>\<esc>", 'tnix')
-  call assert_equal([0, 21, 11, 0], getpos('.'))
+  call assert_equal([0, 23, 11, 0], getpos('.'))
   call feedkeys("A\<PageUp>\<esc>", 'tnix')
-  call assert_equal([0, 13, 11, 0], getpos('.'))
+  call assert_equal([0, 15, 11, 0], getpos('.'))
   call feedkeys("A\<PageUp>\<esc>", 'tnix')
-  call assert_equal([0, 5, 11, 0], getpos('.'))
+  call assert_equal([0, 10, 11, 0], getpos('.'))
   call feedkeys("A\<PageUp>\<esc>", 'tnix')
-  call assert_equal([0, 5, 11, 0], getpos('.'))
+  call assert_equal([0, 10, 11, 0], getpos('.'))
   call cursor(1, 1)
   call feedkeys("A\<PageDown>\<esc>", 'tnix')
   call assert_equal([0, 9, 11, 0], getpos('.'))
@@ -1357,15 +1355,15 @@ func Test_edit_PAGEUP_PAGEDOWN()
   call cursor(30, 11)
   norm! zt
   call feedkeys("A\<S-Up>\<esc>", 'tnix')
-  call assert_equal([0, 29, 11, 0], getpos('.'))
+  call assert_equal([0, 30, 11, 0], getpos('.'))
   call feedkeys("A\<S-Up>\<esc>", 'tnix')
-  call assert_equal([0, 21, 11, 0], getpos('.'))
+  call assert_equal([0, 23, 11, 0], getpos('.'))
   call feedkeys("A\<S-Up>\<esc>", 'tnix')
-  call assert_equal([0, 13, 11, 0], getpos('.'))
+  call assert_equal([0, 15, 11, 0], getpos('.'))
   call feedkeys("A\<S-Up>\<esc>", 'tnix')
-  call assert_equal([0, 5, 11, 0], getpos('.'))
+  call assert_equal([0, 10, 11, 0], getpos('.'))
   call feedkeys("A\<S-Up>\<esc>", 'tnix')
-  call assert_equal([0, 5, 11, 0], getpos('.'))
+  call assert_equal([0, 10, 11, 0], getpos('.'))
   call cursor(1, 1)
   call feedkeys("A\<S-Down>\<esc>", 'tnix')
   call assert_equal([0, 9, 11, 0], getpos('.'))
@@ -2156,6 +2154,115 @@ func Test_edit_Ctrl_RSB()
   autocmd! InsertCharPre
   unlet g:triggered
   bwipe!
+endfunc
+
+func s:check_backspace(expected)
+  let g:actual = []
+  inoremap <buffer> <F2> <Cmd>let g:actual += [getline('.')]<CR>
+  set backspace=indent,eol,start
+
+  exe "normal $i" .. repeat("\<BS>\<F2>", len(a:expected))
+  call assert_equal(a:expected, g:actual)
+
+  set backspace&
+  iunmap <buffer> <F2>
+  unlet g:actual
+endfunc
+
+" Test that backspace works with 'smarttab' and mixed Tabs and spaces.
+func Test_edit_backspace_smarttab_mixed()
+  call NewWindow(1, 30)
+  setlocal smarttab tabstop=4 shiftwidth=4
+  call setline(1, "\t    \t         \t a")
+  call s:check_backspace([
+        \ "\t    \t         \ta",
+        \ "\t    \t        a",
+        \ "\t    \t    a",
+        \ "\t    \ta",
+        \ "\t    a",
+        \ "\ta",
+        \ "a",
+        \ ])
+
+  call CloseWindow()
+endfunc
+
+" Test that backspace works with 'smarttab' and 'varsofttabstop'.
+func Test_edit_backspace_smarttab_varsofttabstop()
+  CheckFeature vartabs
+
+  call NewWindow(1, 30)
+  setlocal smarttab tabstop=8 varsofttabstop=6,2,5,3
+  call setline(1, "a\t    \t a")
+  call s:check_backspace([
+        \ "a\t    \ta",
+        \ "a\t     a",
+        \ "a\ta",
+        \ "a     a",
+        \ "aa",
+        \ "a",
+        \ ])
+
+  call CloseWindow()
+endfunc
+
+" Test that backspace works with 'smarttab' when a Tab is shown as "^I".
+func Test_edit_backspace_smarttab_list()
+  call NewWindow(1, 30)
+  setlocal smarttab tabstop=4 shiftwidth=4 list listchars=
+  call setline(1, "\t    \t         \t a")
+  call s:check_backspace([
+        \ "\t    \t        a",
+        \ "\t    \t    a",
+        \ "\t    \ta",
+        \ "\t  a",
+        \ "a",
+        \ ])
+
+  call CloseWindow()
+endfunc
+
+" Test that backspace works with 'smarttab' and 'breakindent'.
+func Test_edit_backspace_smarttab_breakindent()
+  CheckFeature linebreak
+
+  call NewWindow(3, 17)
+  setlocal smarttab tabstop=4 shiftwidth=4 breakindent breakindentopt=min:5
+  call setline(1, "\t    \t         \t a")
+  call s:check_backspace([
+        \ "\t    \t         \ta",
+        \ "\t    \t        a",
+        \ "\t    \t    a",
+        \ "\t    \ta",
+        \ "\t    a",
+        \ "\ta",
+        \ "a",
+        \ ])
+
+  call CloseWindow()
+endfunc
+
+" Test that backspace works with 'smarttab' and virtual text.
+func Test_edit_backspace_smarttab_virtual_text()
+  CheckFeature textprop
+
+  call NewWindow(1, 50)
+  setlocal smarttab tabstop=4 shiftwidth=4
+  call setline(1, "\t    \t         \t a")
+  call prop_type_add('theprop', {})
+  call prop_add(1, 3, {'type': 'theprop', 'text': 'text'})
+  call s:check_backspace([
+        \ "\t    \t         \ta",
+        \ "\t    \t        a",
+        \ "\t    \t    a",
+        \ "\t    \ta",
+        \ "\t    a",
+        \ "\ta",
+        \ "a",
+        \ ])
+
+  call CloseWindow()
+  call prop_type_delete('theprop')
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab

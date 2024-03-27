@@ -36,7 +36,7 @@
 #  error configure did not run properly.  Check auto/config.log.
 # endif
 
-# if (defined(__linux__) && !defined(__ANDROID__)) || defined(__CYGWIN__)
+# if (defined(__linux__) && !defined(__ANDROID__)) || defined(__CYGWIN__) || defined(__GNU__)
 // Needed for strptime().  Needs to be done early, since header files can
 // include other header files and end up including time.h, where these symbols
 // matter for Vim.
@@ -1404,6 +1404,7 @@ enum auto_event
     EVENT_SAFESTATE,		// going to wait for a character
     EVENT_SAFESTATEAGAIN,	// still waiting for a character
     EVENT_SESSIONLOADPOST,	// after loading a session file
+    EVENT_SESSIONWRITEPOST,	// after writing a session file
     EVENT_SHELLCMDPOST,		// after ":!cmd"
     EVENT_SHELLFILTERPOST,	// after ":1,2!cmd", ":w !cmd", ":r !cmd".
     EVENT_SIGUSR1,		// after the SIGUSR1 signal
