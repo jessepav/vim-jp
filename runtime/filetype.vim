@@ -280,6 +280,9 @@ endif
 " Busted (Lua unit testing framework - configuration files)
 au BufNewFile,BufRead .busted			setf lua
 
+" Bundle config
+au BufNewFile,BufRead */.bundle/config			setf yaml
+
 " C or lpc
 au BufNewFile,BufRead *.c			call dist#ft#FTlpc()
 au BufNewFile,BufRead *.lpc,*.ulpc		setf lpc
@@ -507,6 +510,9 @@ endif
 au BufNewFile,BufRead *s6*/\(up\|down\|run\|finish\)    setf execline
 au BufNewFile,BufRead s6-*                              setf execline
 
+" Fontconfig config files
+au BufNewFile,BufRead fonts.conf			setf xml
+
 " Lynx config files
 au BufNewFile,BufRead lynx.cfg			setf lynx
 
@@ -516,6 +522,10 @@ au BufNewFile,BufRead *.lrc			setf lyrics
 " Modula-3 configuration language (must be before *.cfg and *makefile)
 au BufNewFile,BufRead *.quake,cm3.cfg		setf m3quake
 au BufNewFile,BufRead m3makefile,m3overrides	setf m3build
+
+" Many Python tools use dosini as their config, like setuptools, pudb, coverage
+" (must be before *.cfg)
+au BufNewFile,BufRead setup.cfg,pudb.cfg,.coveragerc	setf dosini
 
 " Quake
 au BufNewFile,BufRead *baseq[2-3]/*.cfg,*id1/*.cfg	setf quake
@@ -1039,9 +1049,6 @@ au BufNewFile,BufRead *.4gl,*.4gh,*.m4gl	setf fgl
 " .INI file for MSDOS
 au BufNewFile,BufRead *.ini,*.INI		setf dosini
 
-" Many python tools use dosini as their config, such as setuptools, pudb, coverage
-au BufNewFile,BufRead setup.cfg,pudb.cfg,.coveragerc	setf dosini
-
 " SysV Inittab
 au BufNewFile,BufRead inittab			setf inittab
 
@@ -1176,8 +1183,11 @@ au BufNewFile,BufRead *.sig			call dist#ft#FTsig()
 " LDAP LDIF
 au BufNewFile,BufRead *.ldif			setf ldif
 
+" Luadoc, Ldoc (must be before *.ld)
+au BufNewFile,BufRead config.ld			setf lua
+
 " Ld loader
-au BufNewFile,BufRead *.ld			setf ld
+au BufNewFile,BufRead *.ld,*/ldscripts/*	setf ld
 
 " Lean
 au BufNewFile,BufRead *.lean			setf lean
@@ -1263,7 +1273,7 @@ au BufNewFile,BufRead .luaurc		setf jsonc
 au BufNewFile,BufRead .luacheckrc		setf lua
 
 " Luarocks
-au BufNewFile,BufRead *.rockspec		setf lua
+au BufNewFile,BufRead *.rockspec,rock_manifest	setf lua
 
 " Linden Scripting Language (Second Life)
 au BufNewFile,BufRead *.lsl			call dist#ft#FTlsl()
@@ -2047,8 +2057,8 @@ au BufNewFile,BufRead *.zs			setf zserio
 
 " Z-Shell script (patterns ending in a star further below)
 au BufNewFile,BufRead .zprofile,*/etc/zprofile,.zfbfmarks  setf zsh
-au BufNewFile,BufRead .zshrc,.zshenv,.zlogin,.zlogout,.zcompdump setf zsh
-au BufNewFile,BufRead *.zsh			setf zsh
+au BufNewFile,BufRead .zshrc,.zshenv,.zlogin,.zlogout,.zcompdump,.zsh_history setf zsh
+au BufNewFile,BufRead *.zsh,*.zsh-theme,*.zunit		setf zsh
 
 " Scheme ("racket" patterns are now separate, see above)
 au BufNewFile,BufRead *.scm,*.ss,*.sld		setf scheme
@@ -2952,6 +2962,9 @@ au filetypedetect BufNewFile,BufRead,StdinReadPost *
 	\	|| getline(5) =~ '^#') |
 	\   setf FALLBACK conf |
 	\ endif
+
+" Yarn lock
+au BufNewFile,BufRead yarn.lock			setf yaml
 
 
 " If the GUI is already running, may still need to install the Syntax menu.
