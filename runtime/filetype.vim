@@ -663,7 +663,7 @@ au BufNewFile,BufRead *.dsl
 au BufNewFile,BufRead *.dtd			setf dtd
 
 " DTS/DSTI/DTSO (device tree files)
-au BufNewFile,BufRead *.dts,*.dtsi,*.dtso,*.its	setf dts
+au BufNewFile,BufRead *.dts,*.dtsi,*.dtso,*.its,*.keymap	setf dts
 
 " Earthfile
 au BufNewFile,BufRead Earthfile			setf earthfile
@@ -1322,7 +1322,12 @@ au BufNewFile,BufRead *.mv,*.mpl,*.mws		setf maple
 au BufNewFile,BufRead *.map			setf map
 
 " Markdown
-au BufNewFile,BufRead *.markdown,*.mdown,*.mkd,*.mkdn,*.mdwn,*.md  setf markdown
+au BufNewFile,BufRead *.markdown,*.mdown,*.mkd,*.mkdn,*.mdwn,*.md
+	\ if exists("g:filetype_md") |
+	\   exe "setf " . g:filetype_md |
+	\ else |
+	\   setf markdown |
+	\ endif
 
 " Mason
 au BufNewFile,BufRead *.mason,*.mhtml,*.comp	setf mason
@@ -1841,7 +1846,7 @@ else
 endif
 
 " R profile file
-au BufNewFile,BufRead .Rprofile,Rprofile,Rprofile.site	setf r
+au BufNewFile,BufRead .Rhistory,.Rprofile,Rprofile,Rprofile.site	setf r
 
 " RSS looks like XML
 au BufNewFile,BufRead *.rss				setf xml
@@ -1882,6 +1887,9 @@ au BufNewFile,BufRead *.robot,*.resource	setf robot
 
 " Robots.txt
 au BufNewFile,BufRead robots.txt		setf robots
+
+" Roc
+au BufNewFile,BufRead *.roc			setf roc
 
 " RON (Rusty Object Notation)
 au BufNewFile,BufRead *.ron			setf ron
@@ -2860,6 +2868,9 @@ au BufNewFile,BufRead */etc/hostname.*		call s:StarSetf('config')
 " Pam conf
 au BufNewFile,BufRead */etc/pam.d/*		call s:StarSetf('pamconf')
 
+" Pandoc
+au BufNewFile,BufRead,BufFilePost *.pandoc,*.pdk,*.pd,*.pdc	setf pandoc
+
 " Printcap and Termcap
 au BufNewFile,BufRead *printcap*
 	\ if !did_filetype()
@@ -2972,6 +2983,8 @@ au filetypedetect BufNewFile,BufRead,StdinReadPost *
 " Yarn lock
 au BufNewFile,BufRead yarn.lock			setf yaml
 
+" Zathurarc
+au BufNewFile,BufRead zathurarc			setf zathurarc
 
 " If the GUI is already running, may still need to install the Syntax menu.
 " Don't do it when the 'M' flag is included in 'guioptions'.
