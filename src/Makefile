@@ -389,10 +389,10 @@ CONF_OPT_GUI = --enable-gui=gtk3
 # This requires at least "normal" features, "tiny" doesn't work.
 #CONF_OPT_LUA = --enable-luainterp
 #CONF_OPT_LUA = --enable-luainterp=dynamic
-CONF_OPT_LUA = --enable-luainterp --with-luajit
+#CONF_OPT_LUA = --enable-luainterp --with-luajit
 #CONF_OPT_LUA = --enable-luainterp=dynamic --with-luajit
 # Lua installation dir (when not set uses $LUA_PREFIX or defaults to /usr)
-CONF_OPT_LUA_PREFIX = --with-lua-prefix=/usr/local
+#CONF_OPT_LUA_PREFIX = --with-lua-prefix=/usr/local
 
 # MZSCHEME
 # Uncomment this when you want to include the MzScheme interface.
