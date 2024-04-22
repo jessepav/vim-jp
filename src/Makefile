@@ -438,7 +438,7 @@ CONF_OPT_GUI = --enable-gui=gtk3
 #CONF_OPT_PYTHON = --enable-pythoninterp
 #CONF_OPT_PYTHON = --enable-pythoninterp --with-python-command=python2.7
 #CONF_OPT_PYTHON = --enable-pythoninterp=dynamic
-CONF_OPT_PYTHON3 = --enable-python3interp
+#CONF_OPT_PYTHON3 = --enable-python3interp
 #CONF_OPT_PYTHON3 = --enable-python3interp --with-python3-command=python3.6
 #CONF_OPT_PYTHON3 = --enable-python3interp=dynamic
 
