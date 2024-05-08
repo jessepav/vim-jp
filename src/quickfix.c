@@ -4871,6 +4871,9 @@ qf_fill_buffer(qf_list_T *qfl, buf_T *buf, qfline_T *old_last, int qf_winid)
 
     if (old_last == NULL)
     {
+	win_T		*wp;
+	tabpage_T	*tp;
+
 	if (buf != curbuf)
 	{
 	    internal_error("qf_fill_buffer()");
@@ -4886,6 +4889,10 @@ qf_fill_buffer(qf_list_T *qfl, buf_T *buf, qfline_T *old_last, int qf_winid)
 	// otherwise autocommands may invalidate the undo stack
 	while ((curbuf->b_ml.ml_flags & ML_EMPTY) == 0)
 	    (void)ml_delete((linenr_T)1);
+
+	FOR_ALL_TAB_WINDOWS(tp, wp)
+	    if (wp->w_buffer == curbuf)
+		wp->w_skipcol = 0;
 
 	// Remove all undo information
 	u_clearallandblockfree(curbuf);
