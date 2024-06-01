@@ -4458,7 +4458,7 @@ f_exists_compiled(typval_T *argvars UNUSED, typval_T *rettv UNUSED)
 f_expand(typval_T *argvars, typval_T *rettv)
 {
     char_u	*s;
-    int		len;
+    size_t	len;
     int		options = WILD_SILENT|WILD_USE_NL|WILD_LIST_NOTFOUND;
     expand_T	xpc;
     int		error = FALSE;
@@ -5464,7 +5464,7 @@ f_getpos(typval_T *argvars, typval_T *rettv)
 /*
  * Convert from block_def to string
  */
-   static char_u *
+    static char_u *
 block_def2str(struct block_def *bd)
 {
     char_u *p, *ret;
@@ -10948,7 +10948,7 @@ f_shiftwidth(typval_T *argvars UNUSED, typval_T *rettv)
 	if (col < 0)
 	    return;	// type error; errmsg already given
 #ifdef FEAT_VARTABS
-	rettv->vval.v_number = get_sw_value_col(curbuf, col);
+	rettv->vval.v_number = get_sw_value_col(curbuf, col, FALSE);
 	return;
 #endif
     }
