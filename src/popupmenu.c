@@ -26,6 +26,9 @@ static int pum_base_width;		// width of pum items base
 static int pum_kind_width;		// width of pum items kind column
 static int pum_extra_width;		// width of extra stuff
 static int pum_scrollbar;		// TRUE when scrollbar present
+#ifdef FEAT_RIGHTLEFT
+static int pum_rl;			// TRUE when pum is drawn 'rightleft'
+#endif
 
 static int pum_row;			// top row of pum
 static int pum_col;			// left column of pum
@@ -101,8 +104,9 @@ pum_display(
 #if defined(FEAT_QUICKFIX)
     win_T	*pvwin;
 #endif
+
 #ifdef FEAT_RIGHTLEFT
-    int		right_left = State == MODE_CMDLINE ? FALSE : curwin->w_p_rl;
+    pum_rl = State != MODE_CMDLINE && curwin->w_p_rl;
 #endif
 
     do
@@ -243,7 +247,7 @@ pum_display(
 	    // w_wcol includes virtual text "above"
 	    int wcol = curwin->w_wcol % curwin->w_width;
 #ifdef FEAT_RIGHTLEFT
-	    if (right_left)
+	    if (pum_rl)
 		cursor_col = curwin->w_wincol + curwin->w_width - wcol - 1;
 	    else
 #endif
@@ -264,8 +268,8 @@ pum_display(
 
 	if (((cursor_col < Columns - p_pw || cursor_col < Columns - max_width)
 #ifdef FEAT_RIGHTLEFT
-		    && !right_left)
-	       || (right_left && (cursor_col > p_pw || cursor_col > max_width)
+		    && !pum_rl)
+	       || (pum_rl && (cursor_col > p_pw || cursor_col > max_width)
 #endif
 	   ))
 	{
@@ -274,7 +278,7 @@ pum_display(
 
 	    // start with the maximum space available
 #ifdef FEAT_RIGHTLEFT
-	    if (right_left)
+	    if (pum_rl)
 		pum_width = pum_col - pum_scrollbar + 1;
 	    else
 #endif
@@ -291,22 +295,22 @@ pum_display(
 	    }
 	    else if (((cursor_col > p_pw || cursor_col > max_width)
 #ifdef FEAT_RIGHTLEFT
-			&& !right_left)
-		|| (right_left && (cursor_col < Columns - p_pw
+			&& !pum_rl)
+		|| (pum_rl && (cursor_col < Columns - p_pw
 			|| cursor_col < Columns - max_width)
 #endif
 		    ))
 	    {
 		// align pum edge with "cursor_col"
 #ifdef FEAT_RIGHTLEFT
-		if (right_left
+		if (pum_rl
 			&& W_ENDCOL(curwin) < max_width + pum_scrollbar + 1)
 		{
 		    pum_col = cursor_col + max_width + pum_scrollbar + 1;
 		    if (pum_col >= Columns)
 			pum_col = Columns - 1;
 		}
-		else if (!right_left)
+		else if (!pum_rl)
 #endif
 		{
 		    if (curwin->w_wincol > Columns - max_width - pum_scrollbar
@@ -320,7 +324,7 @@ pum_display(
 		}
 
 #ifdef FEAT_RIGHTLEFT
-		if (right_left)
+		if (pum_rl)
 		    pum_width = pum_col - pum_scrollbar + 1;
 		else
 #endif
@@ -330,7 +334,7 @@ pum_display(
 		{
 		    pum_width = p_pw;
 #ifdef FEAT_RIGHTLEFT
-		    if (right_left)
+		    if (pum_rl)
 		    {
 			if (pum_width > pum_col)
 			    pum_width = pum_col;
@@ -358,7 +362,7 @@ pum_display(
 	{
 	    // not enough room, will use what we have
 #ifdef FEAT_RIGHTLEFT
-	    if (right_left)
+	    if (pum_rl)
 		pum_col = Columns - 1;
 	    else
 #endif
@@ -370,7 +374,7 @@ pum_display(
 	    if (max_width > p_pw)
 		max_width = p_pw;	// truncate
 #ifdef FEAT_RIGHTLEFT
-	    if (right_left)
+	    if (pum_rl)
 		pum_col = max_width - 1;
 	    else
 #endif
@@ -417,46 +421,43 @@ pum_under_menu(int row, int col, int only_redrawing)
 }
 
 /*
- * displays text on the popup menu with specific attributes.
+ * Computes attributes of text on the popup menu.
+ * Returns attributes for every cell, or NULL if all attributes are the same.
  */
-    static void
-pum_screen_put_with_attr(int row, int col, char_u *text, int textlen, hlf_T hlf)
+    static int *
+pum_compute_text_attrs(char_u *text, hlf_T hlf)
 {
     int		i;
     int		leader_len;
-    int		char_len;
-    int		cells;
+    int		char_cells;
     int		new_attr;
-    char_u	*rt_leader = NULL;
-    char_u	*match_leader = NULL;
     char_u	*ptr = text;
+    int		cell_idx = 0;
     garray_T	*ga = NULL;
+    int		*attrs = NULL;
     char_u	*leader = ins_compl_leader();
     int		in_fuzzy = (get_cot_flags() & COT_FUZZY) != 0;
+    int		matched_start = FALSE;
+    int_u	char_pos = 0;
 
     if (leader == NULL || *leader == NUL || (hlf != HLF_PSI && hlf != HLF_PNI)
 	    || (highlight_attr[HLF_PMSI] == highlight_attr[HLF_PSI]
 		&& highlight_attr[HLF_PMNI] == highlight_attr[HLF_PNI]))
-    {
-	screen_puts_len(text, textlen, row, col, highlight_attr[hlf]);
-	return;
-    }
+	return NULL;
 
-#ifdef FEAT_RIGHTLEFT
-    if (curwin->w_p_rl)
-	rt_leader = reverse_text(leader);
-#endif
-    match_leader = rt_leader != NULL ? rt_leader : leader;
-    leader_len = (int)STRLEN(match_leader);
+    attrs = ALLOC_MULT(int, vim_strsize(text));
+    if (attrs == NULL)
+	return NULL;
+
+    leader_len = (int)STRLEN(leader);
 
     if (in_fuzzy)
-	ga = fuzzy_match_str_with_pos(text, match_leader);
+	ga = fuzzy_match_str_with_pos(text, leader);
+    else
+	matched_start = STRNCMP(text, leader, leader_len) == 0;
 
-    // Render text with proper attributes
-    while (*ptr != NUL && ptr < text + textlen)
+    while (*ptr != NUL)
     {
-	char_len = mb_ptr2len(ptr);
-	cells = mb_ptr2cells(ptr);
 	new_attr = highlight_attr[hlf];
 
 	if (ga != NULL)
@@ -464,15 +465,7 @@ pum_screen_put_with_attr(int row, int col, char_u *text, int textlen, hlf_T hlf)
 	    // Handle fuzzy matching
 	    for (i = 0; i < ga->ga_len; i++)
 	    {
-		int_u *match_pos = ((int_u *)ga->ga_data) + i;
-		int_u actual_char_pos = 0;
-		char_u *temp_ptr = text;
-		while (temp_ptr < ptr)
-		{
-		    temp_ptr += mb_ptr2len(temp_ptr);
-		    actual_char_pos++;
-		}
-		if (actual_char_pos == match_pos[0])
+		if (char_pos == ((int_u *)ga->ga_data)[i])
 		{
 		    new_attr = highlight_attr[hlf == HLF_PSI
 							? HLF_PMSI : HLF_PMNI];
@@ -480,13 +473,16 @@ pum_screen_put_with_attr(int row, int col, char_u *text, int textlen, hlf_T hlf)
 		}
 	    }
 	}
-	else if (!in_fuzzy && (ptr - text < leader_len)
-			     && (STRNCMP(text, match_leader, leader_len) == 0))
+	else if (matched_start && ptr < text + leader_len)
 	    new_attr = highlight_attr[hlf == HLF_PSI ? HLF_PMSI : HLF_PMNI];
 
-	screen_puts_len(ptr, char_len, row, col, new_attr);
-	col += cells;
-	ptr += char_len;
+	char_cells = mb_ptr2cells(ptr);
+	for (i = 0; i < char_cells; i++)
+	    attrs[cell_idx + i] = new_attr;
+	cell_idx += char_cells;
+
+	MB_PTR_ADV(ptr);
+	char_pos++;
     }
 
     if (ga != NULL)
@@ -494,8 +490,40 @@ pum_screen_put_with_attr(int row, int col, char_u *text, int textlen, hlf_T hlf)
 	ga_clear(ga);
 	vim_free(ga);
     }
-    if (rt_leader)
-	vim_free(rt_leader);
+    return attrs;
+}
+
+/*
+ * Displays text on the popup menu with specific attributes.
+ */
+    static void
+pum_screen_puts_with_attrs(
+    int		row,
+    int		col,
+    int		cells UNUSED,
+    char_u	*text,
+    int		textlen,
+    int		*attrs)
+{
+    int		col_start = col;
+    char_u	*ptr = text;
+    int		char_len;
+    int		attr;
+
+    // Render text with proper attributes
+    while (*ptr != NUL && ptr < text + textlen)
+    {
+	char_len = mb_ptr2len(ptr);
+#ifdef FEAT_RIGHTLEFT
+	if (pum_rl)
+	    attr = attrs[col_start + cells - col - 1];
+	else
+#endif
+	    attr = attrs[col - col_start];
+        screen_puts_len(ptr, char_len, row, col, attr);
+	col += mb_ptr2cells(ptr);
+	ptr += char_len;
+    }
 }
 
 /*
@@ -572,7 +600,7 @@ pum_redraw(void)
 
 	// prepend a space if there is room
 #ifdef FEAT_RIGHTLEFT
-	if (curwin->w_p_rl)
+	if (pum_rl)
 	{
 	    if (pum_col < curwin->w_wincol + curwin->w_width - 1)
 		screen_putchar(' ', row, pum_col + 1, attr);
@@ -612,6 +640,7 @@ pum_redraw(void)
 			// Display the text that fits or comes before a Tab.
 			// First convert it to printable characters.
 			char_u	*st;
+			int	*attrs;
 			int	saved = *p;
 
 			if (saved != NUL)
@@ -619,8 +648,11 @@ pum_redraw(void)
 			st = transstr(s);
 			if (saved != NUL)
 			    *p = saved;
+
+			attrs = pum_compute_text_attrs(st, hlf);
+
 #ifdef FEAT_RIGHTLEFT
-			if (curwin->w_p_rl)
+			if (pum_rl)
 			{
 			    if (st != NULL)
 			    {
@@ -629,19 +661,19 @@ pum_redraw(void)
 				if (rt != NULL)
 				{
 				    char_u	*rt_start = rt;
-				    int		size;
+				    int		cells;
 
-				    size = vim_strsize(rt);
-				    if (size > pum_width)
+				    cells = vim_strsize(rt);
+				    if (cells > pum_width)
 				    {
 					do
 					{
-					    size -= has_mbyte
-						    ? (*mb_ptr2cells)(rt) : 1;
+					    cells -= has_mbyte
+						     ? (*mb_ptr2cells)(rt) : 1;
 					    MB_PTR_ADV(rt);
-					} while (size > pum_width);
+					} while (cells > pum_width);
 
-					if (size < pum_width)
+					if (cells < pum_width)
 					{
 					    // Most left character requires
 					    // 2-cells but only 1 cell is
@@ -649,10 +681,18 @@ pum_redraw(void)
 					    // '<' on the left of the pum
 					    // item
 					    *(--rt) = '<';
-					    size++;
+					    cells++;
 					}
 				    }
-				    pum_screen_put_with_attr(row, col - size + 1, rt, (int)STRLEN(rt), hlf);
+
+				    if (attrs == NULL)
+					screen_puts_len(rt, (int)STRLEN(rt),
+						   row, col - cells + 1, attr);
+				    else
+					pum_screen_puts_with_attrs(row,
+						    col - cells + 1, cells, rt,
+						       (int)STRLEN(rt), attrs);
+
 				    vim_free(rt_start);
 				}
 				vim_free(st);
@@ -680,18 +720,26 @@ pum_redraw(void)
 				    else
 					--cells;
 				}
-				pum_screen_put_with_attr(row, col, st, size, hlf);
+
+				if (attrs == NULL)
+				    screen_puts_len(st, size, row, col, attr);
+				else
+				    pum_screen_puts_with_attrs(row, col, cells,
+							      st, size, attrs);
+
 				vim_free(st);
 			    }
 			    col += width;
 			}
+
+			vim_free(attrs);
 
 			if (*p != TAB)
 			    break;
 
 			// Display two spaces for a Tab.
 #ifdef FEAT_RIGHTLEFT
-			if (curwin->w_p_rl)
+			if (pum_rl)
 			{
 			    screen_puts_len((char_u *)"  ", 2, row, col - 1,
 									attr);
@@ -724,11 +772,11 @@ pum_redraw(void)
 		    || pum_base_width + n >= pum_width)
 		break;
 #ifdef FEAT_RIGHTLEFT
-	    if (curwin->w_p_rl)
+	    if (pum_rl)
 	    {
 		screen_fill(row, row + 1, pum_col - pum_base_width - n + 1,
 						    col + 1, ' ', ' ', attr);
-		col = pum_col - pum_base_width - n + 1;
+		col = pum_col - pum_base_width - n;
 	    }
 	    else
 #endif
@@ -741,7 +789,7 @@ pum_redraw(void)
 	}
 
 #ifdef FEAT_RIGHTLEFT
-	if (curwin->w_p_rl)
+	if (pum_rl)
 	    screen_fill(row, row + 1, pum_col - pum_width + 1, col + 1, ' ',
 								    ' ', attr);
 	else
@@ -751,7 +799,7 @@ pum_redraw(void)
 	if (pum_scrollbar > 0)
 	{
 #ifdef FEAT_RIGHTLEFT
-	    if (curwin->w_p_rl)
+	    if (pum_rl)
 		screen_putchar(' ', row, pum_col - pum_width,
 			i >= thumb_pos && i < thumb_pos + thumb_height
 						  ? attr_thumb : attr_scroll);
@@ -1296,16 +1344,34 @@ pum_position_at_mouse(int min_width)
 	    pum_row = 0;
 	}
     }
-    if (Columns - mouse_col >= pum_base_width
-	    || Columns - mouse_col > min_width)
-	// Enough space to show at mouse column.
-	pum_col = mouse_col;
-    else
-	// Not enough space, right align with window.
-	pum_col = Columns - (pum_base_width > min_width
-						 ? min_width : pum_base_width);
 
-    pum_width = Columns - pum_col;
+# ifdef FEAT_RIGHTLEFT
+    if (pum_rl)
+    {
+	if (mouse_col + 1 >= pum_base_width
+		|| mouse_col + 1 > min_width)
+	    // Enough space to show at mouse column.
+	    pum_col = mouse_col;
+	else
+	    // Not enough space, left align with window.
+	    pum_col = (pum_base_width > min_width
+					     ? min_width : pum_base_width) - 1;
+	pum_width = pum_col + 1;
+    }
+    else
+# endif
+    {
+	if (Columns - mouse_col >= pum_base_width
+		|| Columns - mouse_col > min_width)
+	    // Enough space to show at mouse column.
+	    pum_col = mouse_col;
+	else
+	    // Not enough space, right align with window.
+	    pum_col = Columns - (pum_base_width > min_width
+						 ? min_width : pum_base_width);
+	pum_width = Columns - pum_col;
+    }
+
     if (pum_width > pum_base_width + 1)
 	pum_width = pum_base_width + 1;
 
@@ -1529,6 +1595,9 @@ ui_post_balloon(char_u *mesg, list_T *list)
     pum_compute_size();
     pum_scrollbar = 0;
     pum_height = balloon_arraysize;
+# ifdef FEAT_RIGHTLEFT
+    pum_rl = curwin->w_p_rl;
+# endif
 
     pum_position_at_mouse(BALLOON_MIN_WIDTH);
     pum_selected = -1;
@@ -1639,6 +1708,9 @@ pum_show_popupmenu(vimmenu_T *menu)
     pum_compute_size();
     pum_scrollbar = 0;
     pum_height = pum_size;
+# ifdef FEAT_RIGHTLEFT
+    pum_rl = curwin->w_p_rl;
+# endif
     pum_position_at_mouse(20);
 
     pum_selected = -1;
@@ -1734,7 +1806,11 @@ pum_make_popup(char_u *path_name, int use_mouse_pos)
 	// Hack: set mouse position at the cursor so that the menu pops up
 	// around there.
 	mouse_row = W_WINROW(curwin) + curwin->w_wrow;
-	mouse_col = curwin->w_wincol + curwin->w_wcol;
+	mouse_col =
+# ifdef FEAT_RIGHTLEFT
+	    curwin->w_p_rl ? W_ENDCOL(curwin) - curwin->w_wcol - 1 :
+# endif
+	    curwin->w_wincol + curwin->w_wcol;
     }
 
     menu = gui_find_menu(path_name);

@@ -908,6 +908,13 @@ func Test_popup_command_dump()
 
   call term_sendkeys(buf, "\<Esc>")
 
+  if has('rightleft')
+    call term_sendkeys(buf, ":set rightleft\<CR>")
+    call term_sendkeys(buf, "/X\<CR>:popup PopUp\<CR>")
+    call VerifyScreenDump(buf, 'Test_popup_command_rl', {})
+    call term_sendkeys(buf, "\<Esc>:set norightleft\<CR>")
+  endif
+
   " Set a timer to change a menu entry while it's displayed.  The text should
   " not change but the command does.  Making the screendump also verifies that
   " "changed" shows up, which means the timer triggered.
@@ -926,6 +933,37 @@ func Test_popup_command_dump()
   call VerifyScreenDump(buf, 'Test_popup_command_06', {})
 
   call term_sendkeys(buf, "\<Esc>")
+
+  call StopVimInTerminal(buf)
+endfunc
+
+" Test position of right-click menu when clicking near window edge.
+func Test_mouse_popup_position()
+  CheckFeature menu
+  CheckScreendump
+
+  let script =<< trim END
+    set mousemodel=popup_setpos
+    source $VIMRUNTIME/menu.vim
+    call setline(1, join(range(20)))
+    func Trigger(col)
+      call test_setmouse(1, a:col)
+      call feedkeys("\<RightMouse>", 't')
+    endfunc
+  END
+  call writefile(script, 'XmousePopupPosition', 'D')
+  let buf = RunVimInTerminal('-S XmousePopupPosition', #{rows: 20, cols: 50})
+
+  call term_sendkeys(buf, ":call Trigger(45)\<CR>")
+  call VerifyScreenDump(buf, 'Test_mouse_popup_position_01', {})
+  call term_sendkeys(buf, "\<Esc>")
+
+  if has('rightleft')
+    call term_sendkeys(buf, ":set rightleft\<CR>")
+    call term_sendkeys(buf, ":call Trigger(50 + 1 - 45)\<CR>")
+    call VerifyScreenDump(buf, 'Test_mouse_popup_position_02', {})
+    call term_sendkeys(buf, "\<Esc>:set norightleft\<CR>")
+  endif
 
   call StopVimInTerminal(buf)
 endfunc
@@ -1352,6 +1390,7 @@ func Test_pum_highlights_match()
       return {
             \ 'words': [
             \ { 'word': 'foo', 'kind': 'fookind' },
+            \ { 'word': 'foofoo', 'kind': 'fookind' },
             \ { 'word': 'foobar', 'kind': 'fookind' },
             \ { 'word': 'fooBaz', 'kind': 'fookind' },
             \ { 'word': 'foobala', 'kind': 'fookind' },
@@ -1363,7 +1402,7 @@ func Test_pum_highlights_match()
     endfunc
     set omnifunc=Omni_test
     set completeopt=menu,noinsert,fuzzy
-    hi PmenuMatchSel  ctermfg=6 ctermbg=225
+    hi PmenuMatchSel  ctermfg=6 ctermbg=7
     hi PmenuMatch     ctermfg=4 ctermbg=225
   END
   call writefile(lines, 'Xscript', 'D')
@@ -1374,7 +1413,7 @@ func Test_pum_highlights_match()
   call term_sendkeys(buf, "fo")
   call TermWait(buf, 50)
   call VerifyScreenDump(buf, 'Test_pum_highlights_03', {})
-  call term_sendkeys(buf, "\<ESC>S\<C-x>\<C-O>")
+  call term_sendkeys(buf, "\<Esc>S\<C-X>\<C-O>")
   call TermWait(buf, 50)
   call term_sendkeys(buf, "你")
   call TermWait(buf, 50)
@@ -1382,28 +1421,48 @@ func Test_pum_highlights_match()
   call term_sendkeys(buf, "吗")
   call TermWait(buf, 50)
   call VerifyScreenDump(buf, 'Test_pum_highlights_05', {})
+  call term_sendkeys(buf, "\<C-E>\<Esc>")
 
   if has('rightleft')
-    call term_sendkeys(buf, "\<C-E>\<ESC>u:set rightleft\<CR>")
+    call term_sendkeys(buf, ":set rightleft\<CR>")
     call TermWait(buf, 50)
-    call term_sendkeys(buf, "i\<C-X>\<C-O>")
+    call term_sendkeys(buf, "S\<C-X>\<C-O>")
     call TermWait(buf, 50)
     call term_sendkeys(buf, "fo")
     call TermWait(buf, 50)
     call VerifyScreenDump(buf, 'Test_pum_highlights_06', {})
-    call term_sendkeys(buf, "\<C-E>\<ESC>u:set norightleft\<CR>")
+    call term_sendkeys(buf, "\<Esc>S\<C-X>\<C-O>")
+    call TermWait(buf, 50)
+    call term_sendkeys(buf, "你")
+    call VerifyScreenDump(buf, 'Test_pum_highlights_06a', {})
+    call term_sendkeys(buf, "吗")
+    call VerifyScreenDump(buf, 'Test_pum_highlights_06b', {})
+    call term_sendkeys(buf, "\<C-E>\<Esc>")
+    call term_sendkeys(buf, ":set norightleft\<CR>")
     call TermWait(buf)
   endif
 
   call term_sendkeys(buf, ":set completeopt-=fuzzy\<CR>")
   call TermWait(buf)
-  call term_sendkeys(buf, "\<ESC>S\<C-x>\<C-O>")
+  call term_sendkeys(buf, "S\<C-X>\<C-O>")
   call TermWait(buf, 50)
   call term_sendkeys(buf, "fo")
   call TermWait(buf, 50)
   call VerifyScreenDump(buf, 'Test_pum_highlights_07', {})
+  call term_sendkeys(buf, "\<C-E>\<Esc>")
 
-  call term_sendkeys(buf, "\<C-E>\<Esc>u")
+  if has('rightleft')
+    call term_sendkeys(buf, ":set rightleft\<CR>")
+    call TermWait(buf, 50)
+    call term_sendkeys(buf, "S\<C-X>\<C-O>")
+    call TermWait(buf, 50)
+    call term_sendkeys(buf, "fo")
+    call TermWait(buf, 50)
+    call VerifyScreenDump(buf, 'Test_pum_highlights_08', {})
+    call term_sendkeys(buf, "\<C-E>\<Esc>")
+    call term_sendkeys(buf, ":set norightleft\<CR>")
+  endif
+
   call TermWait(buf)
   call StopVimInTerminal(buf)
 endfunc
