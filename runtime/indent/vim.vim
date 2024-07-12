@@ -16,13 +16,7 @@ b:undo_indent = 'setlocal indentkeys< indentexpr<'
 
 import autoload '../autoload/dist/vimindent.vim'
 
-# Create a global function that proxies vimindent.Expr so that my
-# ToggleIndentMode() function can save a reference to it.
-def g:VimIndentExpr(lnum = v:lnum): number
-  return vimindent.Expr(lnum)
-enddef
-
-setlocal indentexpr=g:VimIndentExpr()
+setlocal indentexpr=vimindent.Expr()
 setlocal indentkeys+==endif,=enddef,=endfu,=endfor,=endwh,=endtry,=endclass,=endinterface,=endenum,=},=else,=cat,=finall,=END,0\\
 execute('setlocal indentkeys+=0=\"\\\ ,0=#\\\ ')
 setlocal indentkeys-=0#
