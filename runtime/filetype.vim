@@ -111,6 +111,9 @@ au BufNewFile,BufRead *.ino,*.pde		setf arduino
 " Ash of busybox
 au BufNewFile,BufRead .ash_history		setf sh
 
+" Asymptote
+au BufNewFile,BufRead *.asy		setf asy
+
 " Apache config file
 au BufNewFile,BufRead .htaccess,*/etc/httpd/*.conf		setf apache
 au BufNewFile,BufRead */etc/apache2/sites-*/*.com		setf apache
@@ -507,6 +510,9 @@ au BufNewFile,BufRead *.cu,*.cuh		setf cuda
 " Cue
 au BufNewFile,BufRead *.cue			setf cue
 
+" Debian devscripts
+au BufNewFile,BufRead devscripts.conf,.devscripts	setf sh
+
 " Dockerfile; Podman uses the same syntax with name Containerfile
 " Also see Dockerfile.* below.
 au BufNewFile,BufRead Containerfile,Dockerfile,dockerfile,*.[dD]ockerfile	setf dockerfile
@@ -809,10 +815,6 @@ au BufNewFile,BufRead *.fish			setf fish
 
 " Flatpak config
 au BufNewFile,BufRead */flatpak/repo/config	setf dosini
-
-" FlexWiki - disabled, because it has side effects when a .wiki file
-" is not actually FlexWiki
-"au BufNewFile,BufRead *.wiki			setf flexwiki
 
 " Focus Executable
 au BufNewFile,BufRead *.fex,*.focexec		setf focexec
@@ -1418,8 +1420,8 @@ au BufNewFile,BufRead *.mason,*.mhtml,*.comp	setf mason
 " Mathematica, Matlab, Murphi, Objective C or Octave
 au BufNewFile,BufRead *.m			call dist#ft#FTm()
 
-" Mathematica notebook
-au BufNewFile,BufRead *.nb			setf mma
+" Mathematica notebook and package files
+au BufNewFile,BufRead *.nb,*.wl			setf mma
 
 " Maya Extension Language
 au BufNewFile,BufRead *.mel			setf mel
@@ -1429,6 +1431,9 @@ au BufNewFile,BufRead .mbsyncrc			setf conf
 
 " mcmeta
 au BufNewFile,BufRead *.mcmeta			setf json
+
+" MediaWiki
+au BufNewFile,BufRead *.mw,*.wiki		setf mediawiki
 
 " Mercurial (hg) commit file
 au BufNewFile,BufRead hg-editor-*.txt		setf hgcommit
@@ -2419,7 +2424,7 @@ au BufNewFile,BufRead *.tcl,*.tm,*.tk,*.itcl,*.itk,*.jacl,.tclshrc,.wishrc,.tcls
 " Xilinx's xsct and xsdb use tcl
 au BufNewFile,BufRead .xsctcmdhistory,.xsdbcmdhistory	setf tcl
 
-" templ 
+" templ
 au BufNewFile,BufRead *.templ			setf templ
 
 " Teal
