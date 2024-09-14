@@ -8015,6 +8015,10 @@ set_ref_in_quickfix(int copyID)
 	    abort = mark_quickfix_ctx(win->w_llist_ref, copyID);
 	    if (abort)
 		return abort;
+
+	    abort = mark_quickfix_user_data(win->w_llist_ref, copyID);
+	    if (abort)
+		return abort;
 	}
     }
 
