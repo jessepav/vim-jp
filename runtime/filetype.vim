@@ -239,7 +239,11 @@ au BufNewFile,BufRead *.cmd
 " ABB RAPID or Batch file for MSDOS.
 au BufNewFile,BufRead *.sys			call dist#ft#FTsys()
 if has("fname_case")
-  au BufNewFile,BufRead *.Sys,*.SYS			call dist#ft#FTsys()
+  au BufNewFile,BufRead *.Sys,*.SYS		call dist#ft#FTsys()
+endif
+au BufNewFile,BufRead *.sysx			setf rapid
+if has("fname_case")
+  au BufNewFile,BufRead *.sysX,*.Sysx,*.SysX,*.SYSX,*.SYSx	setf rapid
 endif
 
 " Batch file for 4DOS
@@ -1183,6 +1187,9 @@ au BufNewFile,BufRead *.clp			setf jess
 " Jgraph
 au BufNewFile,BufRead *.jgr			setf jgraph
 
+" Jinja
+au BufNewFile,BufRead *.jinja			setf jinja
+
 " Jujutsu
 au BufNewFile,BufRead *.jjdescription		setf jj
 
@@ -1240,9 +1247,9 @@ au BufNewFile,BufRead *.src			call dist#ft#FTsrc()
 au BufNewFile,BufRead *.dat			call dist#ft#FTdat()
 au BufNewFile,BufRead *.sub			setf krl
 if has("fname_case")
-   au BufNewFile,BufRead *.Src,*.SRC			call dist#ft#FTsrc()
-   au BufNewFile,BufRead *.Dat,*.DAT			call dist#ft#FTdat()
-   au BufNewFile,BufRead *.Sub,*.SUB			setf krl
+   au BufNewFile,BufRead *.Src,*.SRC		call dist#ft#FTsrc()
+   au BufNewFile,BufRead *.Dat,*.DAT		call dist#ft#FTdat()
+   au BufNewFile,BufRead *.Sub,*.SUB		setf krl
 endif
 
 " Kimwitu[++]
@@ -1495,7 +1502,11 @@ au BufNewFile,BufRead *.mmp			setf mmp
 " ABB Rapid, Modula-2, Modsim III or LambdaProlog
 au BufNewFile,BufRead *.mod			call dist#ft#FTmod()
 if has("fname_case")
-   au BufNewFile,BufRead *.Mod,*.MOD			call dist#ft#FTmod()
+   au BufNewFile,BufRead *.Mod,*.MOD		call dist#ft#FTmod()
+endif
+au BufNewFile,BufRead *.modx			setf rapid
+if has("fname_case")
+   au BufNewFile,BufRead *.modX,*.Modx,*.ModX,*.MODX,*.MODx	setf rapid
 endif
 
 " Modula-3 (.m3, .i3, .mg, .ig)
@@ -2227,6 +2238,9 @@ au BufNewFile,BufRead *.zs			setf zserio
 au BufNewFile,BufRead .zprofile,*/etc/zprofile,.zfbfmarks  setf zsh
 au BufNewFile,BufRead .zshrc,.zshenv,.zlogin,.zlogout,.zcompdump,.zsh_history setf zsh
 au BufNewFile,BufRead *.zsh,*.zsh-theme,*.zunit		setf zsh
+
+" Salt state files
+au BufNewFile,BufRead *.sls			setf salt
 
 " Scheme ("racket" patterns are now separate, see above)
 au BufNewFile,BufRead *.scm,*.ss,*.sld		setf scheme
