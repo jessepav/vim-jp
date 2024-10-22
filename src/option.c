@@ -4259,6 +4259,26 @@ did_set_termguicolors(optset_T *args UNUSED)
 }
 #endif
 
+#if defined(FEAT_TERMINAL) || defined(PROTO)
+/*
+ * Process the updated 'termwinscroll' option value.
+ */
+    char *
+did_set_termwinscroll(optset_T *args)
+{
+    long	*pp = (long *)args->os_varp;
+    char	*errmsg = NULL;
+
+    if (*pp < 1)
+    {
+	errmsg = e_argument_must_be_positive;
+	*pp = 1;
+    }
+
+    return errmsg;
+}
+#endif
+
 /*
  * Process the updated 'terse' option value.
  */
@@ -4328,7 +4348,7 @@ did_set_textwidth(optset_T *args UNUSED)
 	tabpage_T	*tp;
 
 	FOR_ALL_TAB_WINDOWS(tp, wp)
-	    check_colorcolumn(wp);
+	    check_colorcolumn(NULL, wp);
     }
 #endif
 
@@ -6293,6 +6313,11 @@ unset_global_local_option(char_u *name, void *from)
 	case PV_FP:
 	    clear_string_option(&buf->b_p_fp);
 	    break;
+# ifdef FEAT_EVAL
+	case PV_FEXPR:
+	    clear_string_option(&buf->b_p_fexpr);
+	    break;
+# endif
 # ifdef FEAT_QUICKFIX
 	case PV_EFM:
 	    clear_string_option(&buf->b_p_efm);
@@ -6371,6 +6396,9 @@ get_varp_scope(struct vimoption *p, int scope)
 	switch ((int)p->indir)
 	{
 	    case PV_FP:   return (char_u *)&(curbuf->b_p_fp);
+#ifdef FEAT_EVAL
+	    case PV_FEXPR:   return (char_u *)&(curbuf->b_p_fexpr);
+#endif
 #ifdef FEAT_QUICKFIX
 	    case PV_EFM:  return (char_u *)&(curbuf->b_p_efm);
 	    case PV_GP:   return (char_u *)&(curbuf->b_p_gp);
@@ -6481,6 +6509,10 @@ get_varp(struct vimoption *p)
 #endif
 	case PV_FP:	return *curbuf->b_p_fp != NUL
 				    ? (char_u *)&(curbuf->b_p_fp) : p->var;
+#ifdef FEAT_EVAL
+	case PV_FEXPR:	return *curbuf->b_p_fexpr != NUL
+				    ? (char_u *)&curbuf->b_p_fexpr : p->var;
+#endif
 #ifdef FEAT_QUICKFIX
 	case PV_EFM:	return *curbuf->b_p_efm != NUL
 				    ? (char_u *)&(curbuf->b_p_efm) : p->var;
@@ -6728,6 +6760,21 @@ get_equalprg(void)
 }
 
 /*
+ * Get the value of 'findexpr', either the buffer-local one or the global one.
+ */
+    char_u *
+get_findexpr(void)
+{
+#ifdef FEAT_EVAL
+    if (*curbuf->b_p_fexpr == NUL)
+	return p_fexpr;
+    return curbuf->b_p_fexpr;
+#else
+    return (char_u *)"";
+#endif
+}
+
+/*
  * Copy options from one window to another.
  * Used when splitting a window.
  */
@@ -6751,11 +6798,11 @@ after_copy_winopt(win_T *wp)
     else
 	wp->w_skipcol = 0;
 #ifdef FEAT_LINEBREAK
-    briopt_check(wp);
+    briopt_check(NULL, wp);
 #endif
 #ifdef FEAT_SYN_HL
     fill_culopt_flags(NULL, wp);
-    check_colorcolumn(wp);
+    check_colorcolumn(NULL, wp);
 #endif
     set_listchars_option(wp, wp->w_p_lcs, TRUE, NULL, 0);
     set_fillchars_option(wp, wp->w_p_fcs, TRUE, NULL, 0);
@@ -7255,6 +7302,10 @@ buf_copy_options(buf_T *buf, int flags)
 	    buf->b_p_efm = empty_option;
 #endif
 	    buf->b_p_ep = empty_option;
+#if defined(FEAT_EVAL)
+	    buf->b_p_fexpr = vim_strsave(p_fexpr);
+	    COPY_OPT_SCTX(buf, BV_FEXPR);
+#endif
 	    buf->b_p_kp = empty_option;
 	    buf->b_p_path = empty_option;
 	    buf->b_p_tags = empty_option;
