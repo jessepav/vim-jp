@@ -2430,6 +2430,9 @@ au BufNewFile,BufRead *.sml			setf sml
 " Sratus VOS command macro
 au BufNewFile,BufRead *.cm			setf voscm
 
+" Sway (programming language)
+au BufNewFile,BufRead *.sw			setf sway
+
 " Swift
 au BufNewFile,BufRead *.swift,*.swiftinterface	setf swift
 au BufNewFile,BufRead *.swift.gyb		setf swiftgyb
@@ -2585,6 +2588,9 @@ au BufNewFile,BufReadPost *.tsscl		setf tsscl
 
 " TSV Files
 au BufNewFile,BufRead *.tsv			setf tsv
+
+" Tutor mode
+au BufNewFile,BufReadPost *.tutor		setf tutor
 
 " TWIG files
 au BufNewFile,BufReadPost *.twig		setf twig
