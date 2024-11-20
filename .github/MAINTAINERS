@@ -217,6 +217,7 @@ runtime/ftplugin/meson.vim		@Liambeguin
 runtime/ftplugin/modula2.vim		@dkearns
 runtime/ftplugin/modula3.vim		@dkearns
 runtime/ftplugin/mojo.vim		@ribru17
+runtime/ftplugin/mss.vim		@Freed-Wu
 runtime/ftplugin/nginx.vim		@chr4
 runtime/ftplugin/nim.vim		@ribru17
 runtime/ftplugin/nroff.vim		@a-vrma
@@ -224,6 +225,7 @@ runtime/ftplugin/nsis.vim		@k-takata
 runtime/ftplugin/nu.vim		@mrcjkb
 runtime/ftplugin/octave.vim		@dkearns
 runtime/ftplugin/ondir.vim		@jparise
+runtime/ftplugin/opencl.vim		@Freed-Wu
 runtime/ftplugin/openvpn.vim		@ObserverOfTime
 runtime/ftplugin/pascal.vim		@dkearns
 runtime/ftplugin/pbtxt.vim		@lakshayg
@@ -491,6 +493,7 @@ runtime/syntax/json.vim		        @vito-c
 runtime/syntax/jsonc.vim		@izhakjakov
 runtime/syntax/julia.vim		@carlobaldassi
 runtime/syntax/jq.vim		        @vito-c
+runtime/syntax/karel.vim		@kirillmorozov
 runtime/syntax/kconfig.vim		@chrisbra
 runtime/syntax/kivy.vim		@prophittcorey
 runtime/syntax/kotlin.vim		@udalov
@@ -516,6 +519,7 @@ runtime/syntax/modula2/opt/iso.vim	@trijezdci
 runtime/syntax/modula2/opt/pim.vim	@trijezdci
 runtime/syntax/modula2/opt/r10.vim	@trijezdci
 runtime/syntax/modula3.vim		@dkearns
+runtime/syntax/mss.vim		@Freed-Wu
 runtime/syntax/n1ql.vim			@pr3d4t0r
 runtime/syntax/nginx.vim		@chr4
 runtime/syntax/ninja.vim		@nico
@@ -523,6 +527,7 @@ runtime/syntax/nix.vim			@equill
 runtime/syntax/nroff.vim		@jmarshall
 runtime/syntax/nsis.vim			@k-takata
 runtime/syntax/ondir.vim		@jparise
+runtime/syntax/opencl.vim		@Freed-Wu
 runtime/syntax/openvpn.vim		@ObserverOfTime
 runtime/syntax/pacmanlog.vim		@rpigott
 runtime/syntax/pascal.vim		@dkearns
