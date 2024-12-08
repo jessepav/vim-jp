@@ -1093,7 +1093,7 @@ messagesopt_changed(void)
     int		messages_wait_new = 0;
     int		messages_history_new = 0;
 
-    p = p_meo;
+    p = p_mopt;
     while (*p != NUL)
     {
 	if (STRNCMP(p, MESSAGES_OPT_HIT_ENTER,
@@ -1133,8 +1133,10 @@ messagesopt_changed(void)
     if (!(messages_flags_new & MESSAGES_HISTORY))
         return FAIL;
 
-    // "history" must be <= 10000
-    if (messages_history_new > 10000)
+    if (messages_history_new < 0 || messages_history_new > 10000)
+        return FAIL;
+
+    if (messages_wait_new < 0 || messages_wait_new > 10000)
         return FAIL;
 
     msg_flags = messages_flags_new;
