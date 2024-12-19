@@ -912,13 +912,13 @@ ins_compl_insert_bytes(char_u *p, int len)
     if (len == -1)
 	len = (int)STRLEN(p);
     ins_bytes_len(p, len);
-    compl_ins_end_col = curwin->w_cursor.col - 1;
+    compl_ins_end_col = curwin->w_cursor.col;
 }
 
 /*
- *  Checks if the column is within the currently inserted completion text
- *  column range. If it is, it returns a special highlight attribute.
- *  -1 mean normal item.
+ * Checks if the column is within the currently inserted completion text
+ * column range. If it is, it returns a special highlight attribute.
+ * -1 mean normal item.
  */
     int
 ins_compl_col_range_attr(int col)
@@ -2437,7 +2437,7 @@ ins_compl_stop(int c, int prev_mode, int retval)
 	    int	    compl_len = get_compl_len();
 
 	    if ((int)plen > compl_len)
-		ins_compl_insert_bytes(p + compl_len, (int)(plen - compl_len));
+		ins_compl_insert_bytes(p + compl_len, (int)plen - compl_len);
 	}
 	retval = TRUE;
     }
@@ -4264,6 +4264,7 @@ ins_compl_delete(void)
 	if (stop_arrow() == FAIL)
 	    return;
 	backspace_until_column(col);
+	compl_ins_end_col = curwin->w_cursor.col;
     }
 
     // TODO: is this sufficient for redrawing?  Redrawing everything causes
