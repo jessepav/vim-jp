@@ -1,4 +1,4 @@
-*version9.txt*  For Vim version 9.1.  Last change: 2024 Dec 16
+*version9.txt*  For Vim version 9.1.  Last change: 2024 Dec 30
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -41617,6 +41617,10 @@ Changed~
   |CompleteDone| autocommand in the |v:event| dictionary
 - the default fontsize for the GTK builds of Vim (Windows and Unix) has been
   increased to 12pt to accomodate modern high-dpi monitors
+- filetype detection now detects bash scripts as a separate "bash" filetype
+  instead of the "sh" filetype
+- the default value of the 'keyprotocol' option has been updated by support
+  for the ghostty terminal emulator (using kitty protocol)
 
 							*added-9.2*
 Added ~
@@ -41625,13 +41629,15 @@ Various syntax, indent and other plugins were added.
 
 Functions: ~
 
+|base64_decode()|	decode a base64 string into a blob
+|base64_encode()|	encode a blob into a base64 string
 |bindtextdomain()|	set message lookup translation base path
 |diff()|		diff two Lists of strings
 |filecopy()|		copy a file {from} to {to}
 |foreach()|		apply function to List items
+|getcellpixels()|	get List of terminal cell pixel size
 |getcmdcomplpat()|	Shell command line completion
 |getcmdprompt()|	get prompt for input()/confirm()
-|getcellpixels()|	get List of terminal cell pixel size
 |getregion()|		get a region of text from a buffer
 |getregionpos()|	get a list of positions for a region
 |id()|			get unique identifier for a Dict, List, Object,
@@ -41721,4 +41727,4 @@ features, but does not include runtime file changes (syntax, indent, ftplugin,
 documentation, etc.)
 
 
- vim:tw=78:ts=8:noet:ft=help:norl:fdm=manual:
+ vim:tw=78:ts=8:noet:ft=help:norl:fdm=manual:nofoldenable
