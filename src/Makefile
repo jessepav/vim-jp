@@ -3006,6 +3006,8 @@ shadowupdate:
 # Link needed for doing "make install" in a shadow directory.
 runtime:
 	-ln -s ../runtime .
+	-ln -s ../README.txt .
+	-ln -s ../LICENSE .
 
 # Link needed for doing "make" using GTK in a shadow directory.
 pixmaps:
