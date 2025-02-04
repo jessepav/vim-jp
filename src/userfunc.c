@@ -682,12 +682,12 @@ make_ufunc_name_readable(char_u *name, char_u *buf, size_t bufsize)
     return buf;
 }
 
-/*
- * Get a name for a lambda.  Returned in static memory.
- */
 static char_u	lambda_name[8 + NUMBUFLEN];
 static size_t	lambda_namelen = 0;
 
+/*
+ * Get a name for a lambda.  Returned in static memory.
+ */
     char_u *
 get_lambda_name(void)
 {
@@ -1322,7 +1322,8 @@ get_function_body(
 	    {
 		// ":python <<" continues until a dot, like ":append"
 		p = skipwhite(arg + 2);
-		if (STRNCMP(p, "trim", 4) == 0)
+		if (STRNCMP(p, "trim", 4) == 0
+			&& (p[4] == NUL || VIM_ISWHITE(p[4])))
 		{
 		    // Ignore leading white space.
 		    p = skipwhite(p + 4);
@@ -1367,26 +1368,34 @@ get_function_body(
 		    current_sctx.sc_version = save_sc_version;
 		    if (arg != NULL && STRNCMP(arg, "=<<", 3) == 0)
 		    {
+			int has_trim = FALSE;
+
 			p = skipwhite(arg + 3);
 			while (TRUE)
 			{
-			    if (STRNCMP(p, "trim", 4) == 0)
+			    if (STRNCMP(p, "trim", 4) == 0
+				    && (p[4] == NUL || VIM_ISWHITE(p[4])))
 			    {
 				// Ignore leading white space.
 				p = skipwhite(p + 4);
-				heredoc_trimmedlen = skipwhite(theline) - theline;
-				heredoc_trimmed = vim_strnsave(theline, heredoc_trimmedlen);
-				if (heredoc_trimmed == NULL)
-				    heredoc_trimmedlen = 0;
+				has_trim = TRUE;
 				continue;
 			    }
-			    if (STRNCMP(p, "eval", 4) == 0)
+			    if (STRNCMP(p, "eval", 4) == 0
+				    && (p[4] == NUL || VIM_ISWHITE(p[4])))
 			    {
 				// Ignore leading white space.
 				p = skipwhite(p + 4);
 				continue;
 			    }
 			    break;
+			}
+			if (has_trim)
+			{
+			    heredoc_trimmedlen = skipwhite(theline) - theline;
+			    heredoc_trimmed = vim_strnsave(theline, heredoc_trimmedlen);
+			    if (heredoc_trimmed == NULL)
+				heredoc_trimmedlen = 0;
 			}
 			skip_until = vim_strnsave(p, skiptowhite(p) - p);
 			getline_options = GETLINE_NONE;
@@ -5404,13 +5413,13 @@ define_function(
 		    emsg_funcname(e_name_already_defined_str, name);
 		else
 		    emsg_funcname(e_function_str_already_exists_add_bang_to_replace, name);
-		goto erret;
+		goto errret_keep;
 	    }
 	    if (fp->uf_calls > 0)
 	    {
 		emsg_funcname(
 			    e_cannot_redefine_function_str_it_is_in_use, name);
-		goto erret;
+		goto errret_keep;
 	    }
 	    if (fp->uf_refcount > 1)
 	    {
@@ -5630,9 +5639,6 @@ erret:
 	ga_init(&fp->uf_def_args);
     }
 errret_2:
-    ga_clear_strings(&newargs);
-    ga_clear_strings(&default_args);
-    ga_clear_strings(&newlines);
     if (fp != NULL)
     {
 	VIM_CLEAR(fp->uf_arg_types);
@@ -5642,6 +5648,10 @@ errret_2:
     }
     if (free_fp)
 	VIM_CLEAR(fp);
+errret_keep:
+    ga_clear_strings(&newargs);
+    ga_clear_strings(&default_args);
+    ga_clear_strings(&newlines);
 ret_free:
     ga_clear_strings(&argtypes);
     ga_clear(&arg_objm);
@@ -6820,17 +6830,13 @@ discard_pending_return(void *rettv)
 get_return_cmd(void *rettv)
 {
     char_u	*s = NULL;
+    char_u	*tofree = NULL;
+    char_u	numbuf[NUMBUFLEN];
     size_t	slen = 0;
     size_t	IObufflen;
 
     if (rettv != NULL)
-    {
-	char_u	*tofree = NULL;
-	char_u	numbuf[NUMBUFLEN];
-
 	s = echo_string((typval_T *)rettv, &tofree, numbuf, 0);
-	vim_free(tofree);
-    }
     if (s == NULL)
 	s = (char_u *)"";
     else
@@ -6839,11 +6845,12 @@ get_return_cmd(void *rettv)
     STRCPY(IObuff, ":return ");
     STRNCPY(IObuff + 8, s, IOSIZE - 8);
     IObufflen = 8 + slen;
-    if (slen + 8 >= IOSIZE)
+    if (IObufflen >= IOSIZE)
     {
 	STRCPY(IObuff + IOSIZE - 4, "...");
-	IObufflen += 3;
+	IObufflen = IOSIZE - 1;
     }
+    vim_free(tofree);
     return vim_strnsave(IObuff, IObufflen);
 }
 
