@@ -24,7 +24,7 @@ void compl_status_clear(void);
 int has_compl_option(int dict_opt);
 int vim_is_ctrl_x_key(int c);
 int ins_compl_accept_char(int c);
-int ins_compl_add_infercase(char_u *str_arg, int len, int icase, char_u *fname, int dir, int cont_s_ipos);
+int ins_compl_add_infercase(char_u *str_arg, int len, int icase, char_u *fname, int dir, int cont_s_ipos, int score);
 int ins_compl_has_shown_match(void);
 int ins_compl_long_shown_match(void);
 unsigned int get_cot_flags(void);
@@ -65,4 +65,6 @@ int ins_compl_col_range_attr(linenr_T lnum, int col);
 void free_insexpand_stuff(void);
 int ins_compl_preinsert_effect(void);
 int ins_compl_lnum_in_range(linenr_T lnum);
+char_u *find_line_end(char_u *ptr);
+
 /* vim: set ft=c : */
