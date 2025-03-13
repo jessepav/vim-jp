@@ -306,7 +306,7 @@ def s:GetFilenameChecks(): dict<list<string>>
     gitattributes: ['file.git/info/attributes', '.gitattributes', '/.config/git/attributes', '/etc/gitattributes', '/usr/local/etc/gitattributes', 'some.git/info/attributes'] + WhenConfigHome('$XDG_CONFIG_HOME/git/attributes'),
     gitcommit: ['COMMIT_EDITMSG', 'MERGE_MSG', 'TAG_EDITMSG', 'NOTES_EDITMSG', 'EDIT_DESCRIPTION'],
     gitconfig: ['file.git/config', 'file.git/config.worktree', 'file.git/worktrees/x/config.worktree', '.gitconfig', '.gitmodules', 'file.git/modules//config', '/.config/git/config', '/etc/gitconfig', '/usr/local/etc/gitconfig', '/etc/gitconfig.d/file', 'any/etc/gitconfig.d/file', '/.gitconfig.d/file', 'any/.config/git/config', 'any/.gitconfig.d/file', 'some.git/config', 'some.git/modules/any/config'] + WhenConfigHome('$XDG_CONFIG_HOME/git/config'),
-    gitignore: ['file.git/info/exclude', '.gitignore', '/.config/git/ignore', 'some.git/info/exclude'] + WhenConfigHome('$XDG_CONFIG_HOME/git/ignore') + ['.prettierignore', '.fdignore', '/.config/fd/ignore', '.ignore', '.rgignore', '.dockerignore', '.npmignore', '.vscodeignore'],
+    gitignore: ['file.git/info/exclude', '.gitignore', '/.config/git/ignore', 'some.git/info/exclude'] + WhenConfigHome('$XDG_CONFIG_HOME/git/ignore') + ['.prettierignore', '.fdignore', '/.config/fd/ignore', '.ignore', '.rgignore', '.dockerignore', '.containerignore', '.npmignore', '.vscodeignore'],
     gitolite: ['gitolite.conf', '/gitolite-admin/conf/file', 'any/gitolite-admin/conf/file'],
     gitrebase: ['git-rebase-todo'],
     gitsendemail: ['.gitsendemail.msg.xxxxxx'],
@@ -804,7 +804,7 @@ def s:GetFilenameChecks(): dict<list<string>>
     teal: ['file.tl'],
     templ: ['file.templ'],
     template: ['file.tmpl'],
-    tera: ['file.tera'],
+    tera: ['file.tera', 'file.toml.tera', 'file.html.tera', 'file.css.tera'],
     teraterm: ['file.ttl'],
     terminfo: ['file.ti'],
     'terraform-vars': ['file.tfvars'],
@@ -819,7 +819,11 @@ def s:GetFilenameChecks(): dict<list<string>>
     tla: ['file.tla'],
     tli: ['file.tli'],
     tmux: ['tmuxfile.conf', '.tmuxfile.conf', '.tmux-file.conf', '.tmux.conf', 'tmux-file.conf', 'tmux.conf', 'tmux.conf.local'],
-    toml: ['file.toml', 'Gopkg.lock', 'Pipfile', '/home/user/.cargo/config', '.black'],
+    toml: ['file.toml', 'Gopkg.lock', 'Pipfile', '/home/user/.cargo/config', '.black',
+           'any/containers/containers.conf', 'any/containers/containers.conf.d/file.conf',
+           'any/containers/containers.conf.modules/file.conf', 'any/containers/containers.conf.modules/any/file.conf',
+           'any/containers/registries.conf', 'any/containers/registries.conf.d/file.conf',
+           'any/containers/storage.conf'],
     tpp: ['file.tpp'],
     trace32: ['file.cmm', 'file.cmmt', 'file.t32'],
     treetop: ['file.treetop'],
@@ -1625,6 +1629,7 @@ func Test_haredoc_file()
 endfunc
 
 func Test_help_file()
+  set nomodeline
   filetype on
   call assert_true(mkdir('doc', 'pR'))
 
@@ -1633,12 +1638,24 @@ func Test_help_file()
   call assert_equal('help', &filetype)
   bwipe!
 
+  call writefile(['some text', 'Copyright: |manual-copyright| vim:ft=help:'],
+        \ 'doc/help1.txt', 'D')
+  split doc/help1.txt
+  call assert_equal('help', &filetype)
+  bwipe!
+
   call writefile(['some text'], 'doc/nothelp.txt', 'D')
   split doc/nothelp.txt
   call assert_notequal('help', &filetype)
   bwipe!
 
+  call writefile(['some text', '`vim:ft=help`'], 'doc/nothelp1.txt', 'D')
+  split doc/nothelp1.txt
+  call assert_notequal('help', &filetype)
+  bwipe!
+
   filetype off
+  set modeline&
 endfunc
 
 func Test_hook_file()
