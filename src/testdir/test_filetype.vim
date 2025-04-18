@@ -188,7 +188,7 @@ def s:GetFilenameChecks(): dict<list<string>>
     cook: ['file.cook'],
     corn: ['file.corn'],
     cpon: ['file.cpon'],
-    cpp: ['file.cxx', 'file.c++', 'file.hh', 'file.hxx', 'file.hpp', 'file.ipp', 'file.moc', 'file.tcc', 'file.inl', 'file.tlh', 'file.cppm', 'file.ccm', 'file.cxxm', 'file.c++m'],
+    cpp: ['file.cxx', 'file.c++', 'file.hh', 'file.hxx', 'file.hpp', 'file.ipp', 'file.ixx', 'file.moc', 'file.tcc', 'file.inl', 'file.tlh', 'file.cppm', 'file.ccm', 'file.cxxm', 'file.c++m', 'file.mpp'],
     cqlang: ['file.cql'],
     crm: ['file.crm'],
     crontab: ['crontab', 'crontab.file', '/etc/cron.d/file', 'any/etc/cron.d/file'],
@@ -239,7 +239,9 @@ def s:GetFilenameChecks(): dict<list<string>>
              '.coveragerc', '.pypirc', '.gitlint', '.oelint.cfg', 'pylintrc', '.pylintrc',
              '/home/user/.config/bpython/config', '/home/user/.config/mypy/config', '.wakatime.cfg', '.replyrc',
              'psprint.conf', 'sofficerc', 'any/.config/lxqt/globalkeyshortcuts.conf', 'any/.config/screengrab/screengrab.conf',
-             'any/.local/share/flatpak/repo/config', '.notmuch-config', '.notmuch-config.myprofile',
+             'any/.local/share/flatpak/repo/config',
+             '.alsoftrc', 'alsoft.conf', 'alsoft.ini', 'alsoftrc.sample',
+             '.notmuch-config', '.notmuch-config.myprofile',
              '~/.config/notmuch/myprofile/config'] + WhenConfigHome('$XDG_CONFIG_HOME/notmuch/myprofile/config'),
     dot: ['file.dot', 'file.gv'],
     dracula: ['file.drac', 'file.drc', 'file.lvs', 'file.lpe', 'drac.file'],
@@ -2857,15 +2859,48 @@ endfunc
 func Test_make_file()
   filetype on
 
+  " BSD Makefile
+  call writefile([''], 'BSDmakefile', 'D')
+  split BSDmakefile
+  call assert_equal('bsd', get(b:, 'make_flavor', ''))
+  bwipe!
+
+  call writefile(['.ifmake all', '.endif'], 'XMakefile.mak', 'D')
+  split XMakefile.mak
+  call assert_equal('bsd', get(b:, 'make_flavor', ''))
+  bwipe!
+
+  " GNU Makefile
+  call writefile([''], 'GNUmakefile', 'D')
+  split GNUmakefile
+  call assert_equal('gnu', get(b:, 'make_flavor', ''))
+  bwipe!
+
+  call writefile(['ifeq ($(foo),foo)', 'endif'], 'XMakefile.mak', 'D')
+  split XMakefile.mak
+  call assert_equal('gnu', get(b:, 'make_flavor', ''))
+  bwipe!
+
+  call writefile(['define foo', 'endef'], 'XMakefile.mak', 'D')
+  split XMakefile.mak
+  call assert_equal('gnu', get(b:, 'make_flavor', ''))
+  bwipe!
+
+  call writefile(['vim := $(wildcard *.vim)'], 'XMakefile.mak', 'D')
+  split XMakefile.mak
+  call assert_equal('gnu', get(b:, 'make_flavor', ''))
+  bwipe!
+
   " Microsoft Makefile
   call writefile(['# Makefile for Windows', '!if "$(VIMDLL)" == "yes"'], 'XMakefile.mak', 'D')
   split XMakefile.mak
-  call assert_equal(1, get(b:, 'make_microsoft', 0))
+  call assert_equal('microsoft', get(b:, 'make_flavor', ''))
   bwipe!
 
+  " BSD or GNU
   call writefile(['# get the list of tests', 'include testdir/Make_all.mak'], 'XMakefile.mak', 'D')
   split XMakefile.mak
-  call assert_equal(0, get(b:, 'make_microsoft', 0))
+  call assert_notequal('microsoft', get(b:, 'make_flavor', ''))
   bwipe!
 
   filetype off
@@ -2887,6 +2922,20 @@ func Test_map_file()
   bwipe!
 
   filetype off
+endfunc
+
+func Test_nroff_file()
+  filetype on
+
+  call writefile(['.TH vim 1 "YYYY Mth DD"'], 'Xfile.1', 'D')
+  split Xfile.1
+  call assert_equal('nroff', &filetype)
+  bwipe!
+
+  call writefile(['. /etc/profile'], 'Xfile.1', 'D')
+  split Xfile.1
+  call assert_notequal('nroff', &filetype)
+  bwipe!
 endfunc
 
 func Test_org_file()
