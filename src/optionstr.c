@@ -28,6 +28,9 @@ static char *(p_bo_values[]) = {"all", "backspace", "cursor", "complete",
 // Note: Keep this in sync with briopt_check()
 static char *(p_briopt_values[]) = {"shift:", "min:", "sbr", "list:", "column:", NULL};
 #endif
+#if defined(FEAT_TABPANEL)
+static char *(p_tpl_values[]) = {"wrap", "align:", "columns:", "vert:", NULL};
+#endif
 #if defined(FEAT_DIFF)
 // Note: Keep this in sync with diffopt_changed()
 static char *(p_dip_values[]) = {"filler", "context:", "iblank", "icase", "iwhite", "iwhiteall", "iwhiteeol", "horizontal", "vertical", "closeoff", "hiddenoff", "foldcolumn:", "followwrap", "internal", "indent-heuristic", "algorithm:", "inline:", "linematch:", NULL};
@@ -1864,7 +1867,7 @@ did_set_cryptkey(optset_T *args)
     }
 # ifdef FEAT_SODIUM
     if (crypt_method_is_sodium(crypt_get_method_nr(curbuf)))
-       crypt_sodium_lock_key(args->os_newval.string);
+	crypt_sodium_lock_key(args->os_newval.string);
 # endif
 
     return NULL;
@@ -3544,6 +3547,33 @@ expand_set_rightleftcmd(optexpand_T *args, int *numMatches, char_u ***matches)
 did_set_rulerformat(optset_T *args)
 {
     return parse_statustabline_rulerformat(args, TRUE);
+}
+#endif
+
+#if defined(FEAT_TABPANEL)
+/*
+ * Process the new 'tabpanelopt' option value.
+ */
+    char *
+did_set_tabpanelopt(optset_T *args)
+{
+    if (tabpanelopt_changed() == FAIL)
+	return e_invalid_argument;
+
+    shell_new_columns();
+
+    return NULL;
+}
+
+    int
+expand_set_tabpanelopt(optexpand_T *args, int *numMatches, char_u ***matches)
+{
+    return expand_set_opt_string(
+	    args,
+	    p_tpl_values,
+	    ARRAY_LENGTH(p_tpl_values) - 1,
+	    numMatches,
+	    matches);
 }
 #endif
 

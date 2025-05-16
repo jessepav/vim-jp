@@ -201,7 +201,7 @@ redraw_for_cursorcolumn(win_T *wp)
  * Returns the number of columns of overlap with buffer text, excluding the
  * extra padding on the ledge.
  */
-     int
+    int
 sms_marker_overlap(win_T *wp, int extra2)
 {
     if (extra2 == -1)
@@ -3215,10 +3215,10 @@ static int scroll_with_sms(int dir, long count, long *curscount)
 
 	int width1 = curwin->w_width - curwin_col_off();
 	int width2 = width1 + curwin_col_off2();
-	count = 1 + (curwin->w_skipcol - width1) / width2;
+	count = 1 + (curwin->w_skipcol - width1 - 1) / width2;
 	if (fixdir == FORWARD)
-	    count = 2 + (linetabsize_eol(curwin, curwin->w_topline)
-					- curwin->w_skipcol - width1) / width2;
+	    count = 1 + (linetabsize_eol(curwin, curwin->w_topline)
+			    - curwin->w_skipcol - width1 + width2 - 1) / width2;
 	scroll_redraw(fixdir == FORWARD, count);
 	*curscount += count * (fixdir == dir ? 1 : -1);
     }
