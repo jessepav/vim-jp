@@ -893,6 +893,9 @@ au BufNewFile,BufRead *.fish			setf fish
 " Flatpak config
 au BufNewFile,BufRead */flatpak/repo/config	setf dosini
 
+" Flix
+au BufNewFile,BufRead *.flix			setf flix
+
 " Focus Executable
 au BufNewFile,BufRead *.fex,*.focexec		setf focexec
 
@@ -1096,6 +1099,9 @@ au BufNewFile,BufRead *.persistentmodels	setf haskellpersistent
 " Haste
 au BufNewFile,BufRead *.ht			setf haste
 au BufNewFile,BufRead *.htpp			setf hastepreproc
+
+" Haxe
+au BufNewFile,BufRead *.hx			setf haxe
 
 " HCL
 au BufRead,BufNewFile *.hcl			setf hcl
@@ -1765,6 +1771,9 @@ au BufNewFile,BufRead *.nt			setf ntriples
 " Nu
 au BufNewFile,BufRead *.nu		setf nu
 
+" Numbat
+au BufNewFile,BufRead *.nbt		setf numbat
+
 " Oblivion Language and Oblivion Script Extender
 au BufNewFile,BufRead *.obl,*.obse,*.oblivion,*.obscript  setf obse
 
@@ -2085,6 +2094,9 @@ au BufRead,BufNewFile qmldir			setf qmldir
 
 " Quarto
 au BufRead,BufNewFile *.qmd			setf quarto
+
+" QuickBms
+au BufRead,BufNewFile *.bms			setf quickbms
 
 " Racket (formerly detected as "scheme")
 au BufNewFile,BufRead *.rkt,*.rktd,*.rktl	setf racket
