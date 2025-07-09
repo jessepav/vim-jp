@@ -1,8 +1,6 @@
 " Tests for clipmethod
 
-source check.vim
-source shared.vim
-source window_manager.vim
+source util/window_manager.vim
 
 CheckFeature clipboard_working
 CheckFeature xterm_clipboard
@@ -125,7 +123,7 @@ func Test_clipreset_switches()
 
   let l:lines =<< trim END
     set cpm=x11
-    source shared.vim
+    source util/shared.vim
 
     func Test()
       clipreset
