@@ -2,13 +2,13 @@
 " Language:          Vim
 " Maintainer:        Doug Kearns <dougkearns@gmail.com>
 " Former Maintainer: Bram Moolenaar <Bram@vim.org>
-" Contributors:      Riley Bruins <ribru17@gmail.com> ('commentstring'),
+" Contributors:      Riley Bruins <ribru17@gmail.com> ('commentstring')
 "                    @Konfekt
 "                    @tpope (s:Help())
 "                    @lacygoill
-" Last Change:       2025 Mar 05
+" Last Change:       2025 Aug 07
 " 2025 Aug 06 by Vim Project (add gf maps #17881)
-" 2025 Aug 08 by Vim Project (add vimscript complete function #17871)
+" 2025 Aug 08 by Vim Project (add Vim script complete function #17871)
 
 " Only do this when not done yet for this buffer
 if exists("b:did_ftplugin")
@@ -62,41 +62,42 @@ if !exists("*" .. expand("<SID>") .. "Help")
   function s:Help(topic) abort
     let topic = a:topic
 
+    " keyword is not necessarily under the cursor, see :help K
+    let line = getline('.')
+    let i = match(line, '\V' .. escape(topic, '\'), col('.') - len(topic))
+    let pre = strpart(line, 0, i)
+    let post = strpart(line, i + len(topic))
+
+    " local/global option vars
+    if topic =~# '[lg]' && pre ==# '&' && post =~# ':\k\+'
+      let topic = matchstr(post, '\k\+')
+    endif
+
     if get(g:, 'syntax_on', 0)
       let syn = synIDattr(synID(line('.'), col('.'), 1), 'name')
       if syn ==# 'vimFuncName'
-        return topic.'()'
-      elseif syn ==# 'vimOption'
-        return "'".topic."'"
-      elseif syn ==# 'vimUserAttrbKey'
-        return ':command-'.topic
-      elseif syn =~# 'vimCommand'
-        return ':'.topic
+        return topic .. '()'
+      elseif syn ==# 'vimOption' || syn ==# 'vimOptionVarName'
+        return "'" .. topic .. "'"
+      elseif syn ==# 'vimUserCmdAttrKey'
+        return ':command-' .. topic
+      elseif syn ==# 'vimCommand'
+        return ':' .. topic
       endif
     endif
 
-    let col = col('.') - 1
-    while col && getline('.')[col] =~# '\k'
-      let col -= 1
-    endwhile
-    let pre = col == 0 ? '' : getline('.')[0 : col]
-
-    let col = col('.') - 1
-    while col && getline('.')[col] =~# '\k'
-      let col += 1
-    endwhile
-    let post = getline('.')[col : -1]
-
-    if pre =~# '^\s*:\=$'
-      return ':'.topic
+    if pre =~# '^\s*:\=$' || pre =~# '\%(\\\||\)\@<!|\s*:\=$'
+      return ':' .. topic
     elseif pre =~# '\<v:$'
-      return 'v:'.topic
+      return 'v:' .. topic
     elseif pre =~# '<$'
-      return '<'.topic.'>'
+      return '<' .. topic .. '>'
     elseif pre =~# '\\$'
-      return '/\'.topic
+      return '/\' .. topic
     elseif topic ==# 'v' && post =~# ':\w\+'
-      return 'v'.matchstr(post, ':\w\+')
+      return 'v' .. matchstr(post, ':\w\+')
+    elseif pre =~# '&\%([lg]:\)\=$'
+      return "'" .. topic .. "'"
     else
       return topic
     endif
