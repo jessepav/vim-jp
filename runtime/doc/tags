@@ -44,6 +44,7 @@ $quote	eval.txt	/*$quote*
 'ac'	options.txt	/*'ac'*
 'acd'	options.txt	/*'acd'*
 'acl'	options.txt	/*'acl'*
+'act'	options.txt	/*'act'*
 'ai'	options.txt	/*'ai'*
 'akm'	options.txt	/*'akm'*
 'al'	options.txt	/*'al'*
@@ -66,6 +67,7 @@ $quote	eval.txt	/*$quote*
 'autochdir'	options.txt	/*'autochdir'*
 'autocomplete'	options.txt	/*'autocomplete'*
 'autocompletedelay'	options.txt	/*'autocompletedelay'*
+'autocompletetimeout'	options.txt	/*'autocompletetimeout'*
 'autoindent'	options.txt	/*'autoindent'*
 'autoprint'	vi_diff.txt	/*'autoprint'*
 'autoread'	options.txt	/*'autoread'*
@@ -175,6 +177,7 @@ $quote	eval.txt	/*$quote*
 'completeopt'	options.txt	/*'completeopt'*
 'completepopup'	options.txt	/*'completepopup'*
 'completeslash'	options.txt	/*'completeslash'*
+'completetimeout'	options.txt	/*'completetimeout'*
 'concealcursor'	options.txt	/*'concealcursor'*
 'conceallevel'	options.txt	/*'conceallevel'*
 'confirm'	options.txt	/*'confirm'*
@@ -205,6 +208,7 @@ $quote	eval.txt	/*$quote*
 'cst'	options.txt	/*'cst'*
 'csto'	options.txt	/*'csto'*
 'csverb'	options.txt	/*'csverb'*
+'cto'	options.txt	/*'cto'*
 'cuc'	options.txt	/*'cuc'*
 'cul'	options.txt	/*'cul'*
 'culopt'	options.txt	/*'culopt'*
@@ -1102,6 +1106,7 @@ $quote	eval.txt	/*$quote*
 't_KJ'	term.txt	/*'t_KJ'*
 't_KK'	term.txt	/*'t_KK'*
 't_KL'	term.txt	/*'t_KL'*
+'t_Ms'	term.txt	/*'t_Ms'*
 't_PE'	term.txt	/*'t_PE'*
 't_PS'	term.txt	/*'t_PS'*
 't_RB'	term.txt	/*'t_RB'*
@@ -10587,6 +10592,7 @@ t_KI	term.txt	/*t_KI*
 t_KJ	term.txt	/*t_KJ*
 t_KK	term.txt	/*t_KK*
 t_KL	term.txt	/*t_KL*
+t_Ms	term.txt	/*t_Ms*
 t_PE	term.txt	/*t_PE*
 t_PS	term.txt	/*t_PS*
 t_RB	term.txt	/*t_RB*
@@ -11099,6 +11105,8 @@ unix	os_unix.txt	/*unix*
 unlisted-buffer	windows.txt	/*unlisted-buffer*
 up-down-motions	motion.txt	/*up-down-motions*
 uppercase	change.txt	/*uppercase*
+uri_decode()	builtin.txt	/*uri_decode()*
+uri_encode()	builtin.txt	/*uri_encode()*
 urxvt-mouse	options.txt	/*urxvt-mouse*
 use-visual-cmds	version4.txt	/*use-visual-cmds*
 useful-mappings	tips.txt	/*useful-mappings*
@@ -11257,6 +11265,7 @@ v:t_string	eval.txt	/*v:t_string*
 v:t_tuple	eval.txt	/*v:t_tuple*
 v:t_typealias	eval.txt	/*v:t_typealias*
 v:termblinkresp	eval.txt	/*v:termblinkresp*
+v:termda1	eval.txt	/*v:termda1*
 v:termrbgresp	eval.txt	/*v:termrbgresp*
 v:termresponse	eval.txt	/*v:termresponse*
 v:termrfgresp	eval.txt	/*v:termrfgresp*
