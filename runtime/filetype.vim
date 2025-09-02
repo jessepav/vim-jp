@@ -1,7 +1,7 @@
 " Vim support file to detect file types
 "
 " Maintainer:		The Vim Project <https://github.com/vim/vim>
-" Last Change:		2025 Aug 29
+" Last Change:		2025 Aug 31
 " Former Maintainer:	Bram Moolenaar <Bram@vim.org>
 
 " Listen very carefully, I will say this only once
@@ -1676,7 +1676,9 @@ au BufNewFile,BufRead *.msql			setf msql
 au BufNewFile,BufRead *.mysql,.mysql_history	setf mysql
 
 " Tcl Shell RC file
-au BufNewFile,BufRead tclsh.rc			setf tcl
+" Vivado journal file records REPL input in tcl syntax
+" Vivado log file records REPL input in tcl syntax and output
+au BufNewFile,BufRead tclsh.rc,vivado*.{jou,log}	setf tcl
 
 " M$ Resource files
 " /etc/Muttrc.d/file.rc is muttrc
@@ -1835,7 +1837,7 @@ au BufNewFile,BufRead pf.conf				setf pf
 
 " ini style config files, using # comments
 au BufNewFile,BufRead pacman.conf,mpv.conf		setf confini
-au BufNewFile,BufRead */.aws/config,*/.aws/credentials	setf confini
+au BufNewFile,BufRead */.aws/config,*/.aws/credentials,*/.aws/cli/alias	setf confini
 au BufNewFile,BufRead *.nmconnection			setf confini
 au BufNewFile,BufRead paru.conf				setf confini
 au BufNewFile,BufRead */{,.}gnuradio/*.conf		setf confini
@@ -3064,7 +3066,7 @@ au BufNewFile,BufRead *.y			call dist#ft#FTy()
 
 " Yaml
 au BufNewFile,BufRead *.yaml,*.yml,*.eyaml		setf yaml
-au BufNewFile,BufRead */.kube/config	setf yaml
+au BufNewFile,BufRead */.kube/config,*/.kube/kuberc	setf yaml
 
 " Raml
 au BufNewFile,BufRead *.raml			setf raml
