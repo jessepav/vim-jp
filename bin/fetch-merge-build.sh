@@ -17,6 +17,15 @@ elif [[ "$1" == @(-p|--merge-push) ]]; then
 elif [[ "$1" == @(-b|--build) ]]; then
     cd src
     make && make install
+    cd /opt/vim9/share/vim/vim91/plugin
+    # We're going to leave these alone:
+    # matchparen.vim tohtml.vim
+    for plugin in colorresp.vim getscriptPlugin.vim gzip.vim logiPat.vim \
+                  manpager.vim netrwPlugin.vim openPlugin.vim rrhelper.vim \
+                  spellfile.vim tarPlugin.vim tutor.vim vimballPlugin.vim \
+                  zipPlugin.vim; do
+        mv -fv $plugin $plugin.disabled
+    done
 else
     echo "Usage: fetch-merge.sh [-f, --fetch] [-m, --merge] [-p, --merge-push] [-b, --build]"
     exit
