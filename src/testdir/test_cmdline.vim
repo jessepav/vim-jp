@@ -2829,7 +2829,7 @@ func Test_wildmenu_pum()
   call term_sendkeys(buf, "\<C-U>set wildmode=longest,list\<CR>")
   call term_sendkeys(buf, ":cn\<Tab>")
   call VerifyScreenDump(buf, 'Test_wildmenu_pum_30', {})
-  call term_sendkeys(buf, "\<Tab>")
+  call term_sendkeys(buf, "s")
   call VerifyScreenDump(buf, 'Test_wildmenu_pum_31', {})
 
   " Tests a directory name contained full-width characters.
@@ -2931,28 +2931,45 @@ func Test_wildmenu_pum()
 
   call term_sendkeys(buf, "\<Esc>:set showtabline& laststatus& lazyredraw&\<CR>")
 
-  " Verify that if "longest" finds nothing, wildmenu is still shown
-  call term_sendkeys(buf, ":set wildmode=longest:full,full wildoptions&\<CR>")
-  call term_sendkeys(buf, ":cn\<Tab>")
-  call TermWait(buf, 50)
-  call VerifyScreenDump(buf, 'Test_wildmenu_pum_54', {})
-
-  " Verify that if "longest" finds nothing, "list" is still shown
-  call term_sendkeys(buf, "\<Esc>:set wildmode=longest:list,full\<CR>")
+  " "longest:list" shows list whether it finds a candidate or not
+  call term_sendkeys(buf, ":set wildmode=longest:list,full wildoptions&\<CR>")
   call term_sendkeys(buf, ":cn\<Tab>")
   call TermWait(buf, 50)
   call VerifyScreenDump(buf, 'Test_wildmenu_pum_55', {})
   call term_sendkeys(buf, "\<Tab>")
   call TermWait(buf, 50)
   call VerifyScreenDump(buf, 'Test_wildmenu_pum_56', {})
-
-  " Verify that if "longest" finds a candidate, wildmenu is not shown
-  call term_sendkeys(buf, "\<Esc>:set wildmode=longest:full,full wildoptions&\<CR>")
-  call term_sendkeys(buf, ":sign u\<Tab>")
+  call term_sendkeys(buf, "\<Esc>:sign u\<Tab>")
+  call TermWait(buf, 50)
   call VerifyScreenDump(buf, 'Test_wildmenu_pum_57', {})
+
+  " "longest:full" shows wildmenu whether it finds a candidate or not; item not selected
+  call term_sendkeys(buf, "\<Esc>:set wildmode=longest:full,full\<CR>")
+  call term_sendkeys(buf, ":sign u\<Tab>")
+  call TermWait(buf, 50)
+  call VerifyScreenDump(buf, 'Test_wildmenu_pum_58', {})
+  call term_sendkeys(buf, "\<Tab>")
+  call TermWait(buf, 50)
+  call VerifyScreenDump(buf, 'Test_wildmenu_pum_59', {})
+  call term_sendkeys(buf, "\<Esc>:cn\<Tab>")
+  call TermWait(buf, 50)
+  call VerifyScreenDump(buf, 'Test_wildmenu_pum_60', {})
+  call term_sendkeys(buf, "\<Tab>")
+  call TermWait(buf, 50)
+  call VerifyScreenDump(buf, 'Test_wildmenu_pum_61', {})
+
+  " If "longest,full" finds a candidate, wildmenu is not shown
+  call term_sendkeys(buf, "\<Esc>:set wildmode=longest,full\<CR>")
+  call term_sendkeys(buf, ":sign u\<Tab>")
+  call VerifyScreenDump(buf, 'Test_wildmenu_pum_62', {})
   " Subsequent wildchar shows wildmenu
   call term_sendkeys(buf, "\<Tab>")
-  call VerifyScreenDump(buf, 'Test_wildmenu_pum_58', {})
+  call VerifyScreenDump(buf, 'Test_wildmenu_pum_63', {})
+
+  " 'longest' does not find candidate, and displays menu without selecting item
+  call term_sendkeys(buf, "\<Esc>:set wildmode=longest,noselect\<CR>")
+  call term_sendkeys(buf, ":cn\<Tab>")
+  call VerifyScreenDump(buf, 'Test_wildmenu_pum_64', {})
 
   call term_sendkeys(buf, "\<C-U>\<Esc>")
   call StopVimInTerminal(buf)
@@ -5020,6 +5037,30 @@ func Test_CmdlineLeave_vchar_keys()
   bwipe!
   delfunc OnLeave
   unlet g:leave_key
+endfunc
+
+" Skip wildmenu during history navigation via Up/Down keys
+func Test_skip_wildtrigger_hist_navigation()
+  call test_override("char_avail", 1)
+  cnoremap <F8> <C-R>=wildtrigger()[-1]<CR>
+  set wildmenu
+
+  call feedkeys(":ech\<F8>\<F4>\<C-B>\"\<CR>", "tx")
+  call assert_match('echo*', g:Sline)
+  call assert_equal('"echo', @:)
+
+  call feedkeys(":echom \"foo\"", "tx")
+  call feedkeys(":echom \"foobar\"", "tx")
+  call feedkeys(":ech\<F8>\<C-E>\<UP>\<C-B>\"\<CR>", "tx")
+  call assert_equal('"echom "foobar"', @:)
+  call feedkeys(":ech\<F8>\<C-E>\<UP>\<UP>\<UP>\<C-B>\"\<CR>", "tx")
+  call assert_equal('"echom "foo"', @:)
+  call feedkeys(":ech\<F8>\<C-E>\<UP>\<UP>\<UP>\<Down>\<C-B>\"\<CR>", "tx")
+  call assert_equal('"echom "foobar"', @:)
+
+  call test_override("char_avail", 0)
+  set wildmenu&
+  cunmap <F8>
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab
