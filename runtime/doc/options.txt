@@ -1,4 +1,4 @@
-*options.txt*	For Vim version 9.1.  Last change: 2025 Sep 10
+*options.txt*	For Vim version 9.1.  Last change: 2025 Sep 11
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -2164,8 +2164,9 @@ A jump table for the options with a short description can be found at |Q_op|.
 		is especially important for |ins-autocompletion|.
 	F	equivalent to using "F{func}", where the function is taken from
 		the 'completefunc' option.
-	o	equivalent to using "F{func}", where the function is taken from
-		the 'omnifunc' option.
+	o	equivalent to "F{func}", where {func} is taken from the 'omnifunc'
+		option.  If a plugin (such as an LSP client) defines 'omnifunc', it
+		can be used through this flag.
 
 	Unloaded buffers are not loaded, thus their autocmds |:autocmd| are
 	not executed, this may lead to unexpected completions from some files
@@ -3067,7 +3068,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 
 						*'dip'* *'diffopt'*
 'diffopt' 'dip'		string	(default
-				 "internal,filler,closeoff,inline:simple")
+				 "internal,filler,closeoff,indent-heuristic,inline:char")
 			global
 			{not available when compiled without the |+diff|
 			feature}
@@ -5088,8 +5089,8 @@ A jump table for the options with a short description can be found at |Q_op|.
 	autocmd.  Example: >
 		augroup vimrc-incsearch-highlight
 		  autocmd!
-		  autocmd CmdlineEnter /,\? :set hlsearch
-		  autocmd CmdlineLeave /,\? :set nohlsearch
+		  autocmd CmdlineEnter [\/\?] :set hlsearch
+		  autocmd CmdlineLeave [\/\?] :set nohlsearch
 		augroup END
 <
 	CTRL-L can be used to add one character from after the current match
