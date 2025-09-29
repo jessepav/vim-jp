@@ -5721,7 +5721,7 @@ func Test_autocompletedelay()
   call VerifyScreenDump(buf, 'Test_autocompletedelay_6', {})
 
   " During delay wait, user can open menu using CTRL_N completion
-  call term_sendkeys(buf, "\<Esc>:set completeopt=menuone,longest\<CR>")
+  call term_sendkeys(buf, "\<Esc>:set completeopt=menuone\<CR>")
   call term_sendkeys(buf, "Sf\<C-N>")
   call VerifyScreenDump(buf, 'Test_autocompletedelay_7', {})
 
@@ -5871,6 +5871,16 @@ func Test_autocomplete_longest()
   call feedkeys("Go\<ESC>", 'tx')
   call DoTest("f\<C-N>\<C-N>\<BS>\<BS>\<BS>\<BS>", 'foo', 3)
 
+  " Issue #18410: When both 'preinsert' and 'longest' are set, 'preinsert'
+  " takes precedence
+  %delete
+  set autocomplete completeopt+=longest,preinsert
+  call setline(1, ['foobar', 'foofoo', 'foobaz', ''])
+  call feedkeys("G", 'tx')
+  call DoTest("f", 'foobar', 2)
+  call assert_equal(1, g:preinserted)
+
+  " Undo
   %delete _
   let &l:undolevels = &l:undolevels
   normal! ifoo
@@ -5940,6 +5950,35 @@ func Test_fuzzy_select_item_when_acl()
 
   call term_sendkeys(buf, "\<esc>")
   call StopVimInTerminal(buf)
+endfunc
+
+" Issue #18378: crash when fuzzy reorders items during refresh:always
+func Test_refresh_always_with_fuzzy()
+  func ComplFunc1(findstart, base)
+    if a:findstart
+      return 1
+    else
+      return ['foo', 'foobar']
+    endif
+  endfunc
+  func ComplFunc2(findstart, base)
+    if a:findstart
+      return 1
+    else
+      return #{words: ['foo'], refresh: 'always'}
+    endif
+  endfunc
+  set complete=.,FComplFunc1,FComplFunc2
+  set autocomplete
+  call test_override("char_avail", 1)
+  new
+  call setline(1, ['fox'])
+  exe "normal! Gofo"
+  bw!
+  delfunc ComplFunc1
+  delfunc ComplFunc2
+  set complete& autocomplete&
+  call test_override("char_avail", 0)
 endfunc
 
 " vim: shiftwidth=2 sts=2 expandtab nofoldenable
