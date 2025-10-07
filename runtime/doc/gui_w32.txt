@@ -1,4 +1,4 @@
-*gui_w32.txt*   For Vim version 9.1.  Last change: 2025 Sep 29
+*gui_w32.txt*   For Vim version 9.1.  Last change: 2025 Oct 07
 
 
 		  VIM REFERENCE MANUAL    by Bram Moolenaar
@@ -489,11 +489,19 @@ VIM_KEYCODE_TRANS_STRATEGY can be set to the desired value ("experimental" or
         gvim.exe
 <
 
-Title Bar's Behaviour			    *gui-w32-title-bar-behaviour*
+Title Bar						*gui-w32-title-bar*
 
-The color of the gVim title bar (sometimes also called the caption bar) is
-treated as part of the application's background.  Starting with Windows 11,
-it follows the background color defined by |hl-Normal|, so it matches the
-background of the current colorscheme.
+Starting with Windows 11, you can customize the gVim title bar (also known as
+the caption bar) by enabling the |'go-C'| option.
+
+Once enabled, the appearance is controlled by two highlighting groups:
+1. |hl-TitleBar|   -- Sets the color of the title bar for the active window.
+2. |hl-TitleBarNC| -- Sets the color of the title bar for inactive windows.
+
+To use the system's default title bar colors, set highlighting groups to
+`NONE`: >
+
+	hi TitleBar guibg=NONE guifg=NONE
+	hi TitleBarNC guibg=NONE guifg=NONE
 
  vim:tw=78:sw=4:ts=8:noet:ft=help:norl:

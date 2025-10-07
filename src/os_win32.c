@@ -222,9 +222,9 @@ static int suppress_winsize = 1;	// don't fiddle with console
 
 static WCHAR *exe_pathw = NULL;
 
-BOOL win8_or_later = FALSE;
-BOOL win10_22H2_or_later = FALSE;
-BOOL win11_or_later = FALSE;
+static BOOL win8_or_later = FALSE;
+static BOOL win10_22H2_or_later = FALSE;
+BOOL win11_or_later = FALSE; // used in gui_mch_set_titlebar_colors(void)
 
 #if !defined(FEAT_GUI_MSWIN) || defined(VIMDLL)
 static BOOL use_alternate_screen_buffer = FALSE;

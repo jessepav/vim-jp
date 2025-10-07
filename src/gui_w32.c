@@ -476,8 +476,9 @@ static int (WINAPI *pGetSystemMetricsForDpi)(int, UINT) = NULL;
 static DPI_AWARENESS_CONTEXT (WINAPI *pSetThreadDpiAwarenessContext)(DPI_AWARENESS_CONTEXT dpiContext) = NULL;
 static DPI_AWARENESS (WINAPI *pGetAwarenessFromDpiAwarenessContext)(DPI_AWARENESS_CONTEXT) = NULL;
 
-// Sets the value of Desktop Window Manager (DWM) non-client rendering attributes for a window.
-static HRESULT (WINAPI *pDwmSetWindowAttribute)(HWND, DWORD, LPCVOID, DWORD) = NULL;
+static HINSTANCE hLibDwm = NULL;
+static HRESULT (WINAPI *pDwmSetWindowAttribute)(HWND, DWORD, LPCVOID, DWORD);
+static void dyn_dwm_load(void);
 
     static int WINAPI
 stubGetSystemMetricsForDpi(int nIndex, UINT dpi UNUSED)
@@ -1603,18 +1604,65 @@ _TextAreaWndProc(
 }
 
     static void
-load_dwm_func(void)
+dyn_dwm_load(void)
 {
-    static HMODULE hLibDwm = NULL;
     hLibDwm = vimLoadLib("dwmapi.dll");
     if (hLibDwm == NULL)
 	return;
 
     pDwmSetWindowAttribute = (HRESULT (WINAPI *)(HWND, DWORD, LPCVOID, DWORD))
 	GetProcAddress(hLibDwm, "DwmSetWindowAttribute");
+
+    if (pDwmSetWindowAttribute == NULL)
+    {
+	FreeLibrary(hLibDwm);
+	hLibDwm = NULL;
+	return;
+    }
 }
 
 extern BOOL win11_or_later; // this is in os_win32.c
+
+/*
+ * Set TitleBar's color. Handle hl-TitleBar and hl-TitleBarNC.
+ *
+ * Only enabled when 'guioptions' has 'C'.
+ * if "TitleBar guibg=NONE guifg=NONE" reset the window back to using the
+ * system's default behavior for the border color.
+ */
+    void
+gui_mch_set_titlebar_colors(void)
+{
+    if (pDwmSetWindowAttribute == NULL || !win11_or_later)
+	return;
+
+    guicolor_T captionColor = 0xFFFFFFFF;
+    guicolor_T textColor = 0xFFFFFFFF;
+
+    if (vim_strchr(p_go, GO_TITLEBAR) != NULL)
+    {
+	if (gui.in_focus)
+	{
+	    captionColor = gui.title_bg_pixel;
+	    textColor = gui.title_fg_pixel;
+	}
+	else
+	{
+	    captionColor = gui.titlenc_bg_pixel;
+	    textColor = gui.titlenc_fg_pixel;
+	}
+
+	if (captionColor == INVALCOLOR)
+	    captionColor = 0xFFFFFFFF;
+	if (textColor == INVALCOLOR)
+	    textColor = 0xFFFFFFFF;
+    }
+
+    pDwmSetWindowAttribute(s_hwnd, DWMWA_CAPTION_COLOR,
+	    &captionColor, sizeof(captionColor));
+    pDwmSetWindowAttribute(s_hwnd, DWMWA_TEXT_COLOR,
+	    &textColor, sizeof(textColor));
+}
 
 /*
  * Called when the foreground or background color has been changed.
@@ -1629,21 +1677,6 @@ gui_mch_new_colors(void)
 				s_hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)s_brush);
     InvalidateRect(s_hwnd, NULL, TRUE);
     DeleteObject(prevBrush);
-
-    // Set The Caption Bar
-
-    if (pDwmSetWindowAttribute == NULL)
-	return;
-
-    if (win11_or_later)
-    {
-	const COLORREF captionColor = gui.back_pixel;
-	pDwmSetWindowAttribute(s_hwnd, DWMWA_CAPTION_COLOR,
-		&captionColor, sizeof(captionColor));
-	const COLORREF textColor = gui.norm_pixel;
-	pDwmSetWindowAttribute(s_hwnd, DWMWA_TEXT_COLOR,
-		&textColor, sizeof(textColor));
-    }
 }
 
 /*
@@ -5676,7 +5709,7 @@ gui_mch_init(void)
 
     load_dpi_func();
 
-    load_dwm_func();
+    dyn_dwm_load();
 
     s_dpi = pGetDpiForSystem();
     update_scrollbar_size();
