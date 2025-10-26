@@ -20,7 +20,7 @@ elif [[ "$1" == @(-b|--build) ]]; then
     cd /opt/vim9/share/vim/vim91/plugin
     # We're going to leave these alone:
     # matchparen.vim tohtml.vim
-    for plugin in colorresp.vim getscriptPlugin.vim gzip.vim logiPat.vim \
+    for plugin in getscriptPlugin.vim gzip.vim logiPat.vim \
                   manpager.vim netrwPlugin.vim openPlugin.vim rrhelper.vim \
                   spellfile.vim tarPlugin.vim tutor.vim vimballPlugin.vim \
                   zipPlugin.vim; do
