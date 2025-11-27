@@ -449,8 +449,6 @@ $quote	eval.txt	/*$quote*
 'infercase'	options.txt	/*'infercase'*
 'insertmode'	options.txt	/*'insertmode'*
 'is'	options.txt	/*'is'*
-'ise'	options.txt	/*'ise'*
-'isexpand'	options.txt	/*'isexpand'*
 'isf'	options.txt	/*'isf'*
 'isfname'	options.txt	/*'isfname'*
 'isi'	options.txt	/*'isi'*
@@ -3841,6 +3839,7 @@ $quote	eval.txt	/*$quote*
 <NL>	motion.txt	/*<NL>*
 <Nop>	map.txt	/*<Nop>*
 <Nul>	intro.txt	/*<Nul>*
+<OSC>	intro.txt	/*<OSC>*
 <PageDown>	scroll.txt	/*<PageDown>*
 <PageUp>	scroll.txt	/*<PageUp>*
 <Plug>	map.txt	/*<Plug>*
@@ -3961,6 +3960,7 @@ $quote	eval.txt	/*$quote*
 <xHome>	term.txt	/*<xHome>*
 <xHome>-xterm	term.txt	/*<xHome>-xterm*
 <xLeft>	term.txt	/*<xLeft>*
+<xOSC>	intro.txt	/*<xOSC>*
 <xRight>	term.txt	/*<xRight>*
 <xUp>	term.txt	/*<xUp>*
 =	change.txt	/*=*
@@ -6799,7 +6799,6 @@ complete_add()	builtin.txt	/*complete_add()*
 complete_check()	builtin.txt	/*complete_check()*
 complete_info()	builtin.txt	/*complete_info()*
 complete_info_mode	builtin.txt	/*complete_info_mode*
-complete_match()	builtin.txt	/*complete_match()*
 completed_item-variable	eval.txt	/*completed_item-variable*
 completion-functions	usr_41.txt	/*completion-functions*
 complex-change	change.txt	/*complex-change*
