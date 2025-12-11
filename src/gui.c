@@ -146,9 +146,11 @@ gui_start(char_u *arg UNUSED)
 	    emsg(msg);
 #endif
     }
+#ifdef HAVE_CLIPMETHOD
     else
 	// Reset clipmethod to CLIPMETHOD_NONE
 	choose_clipmethod();
+#endif
 
 #ifdef FEAT_SOCKETSERVER
     // Install socket server listening socket if we are running it
@@ -3480,7 +3482,7 @@ static int	prev_which_scrollbars[3];
 gui_init_which_components(char_u *oldval UNUSED)
 {
 #ifdef FEAT_GUI_DARKTHEME
-    static int	prev_dark_theme = -1;
+    static int	prev_dark_theme = FALSE;
     int		using_dark_theme = FALSE;
 #endif
 #ifdef FEAT_MENU
