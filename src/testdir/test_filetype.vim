@@ -381,6 +381,7 @@ def s:GetFilenameChecks(): dict<list<string>>
     http: ['file.http'],
     hurl: ['file.hurl'],
     hy: ['file.hy', '.hy-history'],
+    hylo: ['file.hylo'],
     hyprlang: ['hyprlock.conf', 'hyprland.conf', 'hypridle.conf', 'hyprpaper.conf', '/hypr/foo.conf'],
     i3config: ['/home/user/.i3/config', '/home/user/.config/i3/config', '/etc/i3/config', '/etc/xdg/i3/config'],
     ibasic: ['file.iba', 'file.ibi'],
@@ -1095,6 +1096,7 @@ def s:GetScriptChecks(): dict<list<list<string>>>
             ['#!/path/regina']],
     janet:  [['#!/path/janet']],
     dart:   [['#!/path/dart']],
+    bpftrace:  [['#!/path/bpftrace']],
     vim:    [['#!/path/vim']],
   }
 enddef
@@ -3233,9 +3235,9 @@ endfunc
 func Test_m4_format()
   filetype on
 
-  call mkdir('Xm4', 'D')
+  call mkdir('Xm4', 'R')
   cd Xm4
-  call writefile([''], 'alocal.m4', 'D')
+  call writefile([''], 'alocal.m4')
   split alocal.m4
   call assert_equal('m4', &filetype)
   bwipe!
