@@ -127,6 +127,8 @@ runtime/ftplugin/asy.vim				@avidseeker
 runtime/ftplugin/autohotkey.vim				@telemachus
 runtime/ftplugin/awk.vim				@dkearns
 runtime/ftplugin/basic.vim				@dkearns
+runtime/ftplugin/bicep.vim				@scottmckendry
+runtime/ftplugin/bicep-params.vim				@scottmckendry
 runtime/ftplugin/brighterscript.vim			@ribru17
 runtime/ftplugin/brightscript.vim			@ribru17
 runtime/ftplugin/bst.vim				@tpope
@@ -336,6 +338,7 @@ runtime/import/dist/vimhighlight.vim			@lacygoill
 runtime/indent/arduino.vim				@k-takata
 runtime/indent/astro.vim				@wuelnerdotexe
 runtime/indent/basic.vim				@dkearns
+runtime/indent/bpftrace.vim				@sgruszka
 runtime/indent/bst.vim					@tpope
 runtime/indent/cdl.vim					@dkearns
 runtime/indent/chatito.vim				@ObserverOfTime

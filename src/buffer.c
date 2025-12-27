@@ -75,6 +75,7 @@ static garray_T buf_reuse = GA_EMPTY;	// file numbers to recycle
     static void
 trigger_undo_ftplugin(buf_T *buf, win_T *win)
 {
+    int win_was_locked = win->w_locked;
     window_layout_lock();
     buf->b_locked++;
     win->w_locked = TRUE;
@@ -82,7 +83,7 @@ trigger_undo_ftplugin(buf_T *buf, win_T *win)
     do_cmdline_cmd((char_u*)"if exists('b:undo_ftplugin') | :legacy :exe \
 	    b:undo_ftplugin | endif");
     buf->b_locked--;
-    win->w_locked = FALSE;
+    win->w_locked = win_was_locked;
     window_layout_unlock();
 }
 
@@ -2537,6 +2538,9 @@ free_buf_options(
     clear_string_option(&buf->b_p_qe);
     buf->b_p_ac = -1;
     buf->b_p_ar = -1;
+#ifdef HAVE_FSYNC
+    buf->b_p_fs = -1;
+#endif
     buf->b_p_ul = NO_LOCAL_UNDOLEVEL;
     clear_string_option(&buf->b_p_lw);
     clear_string_option(&buf->b_p_bkc);
