@@ -707,7 +707,7 @@ aucmd_abort:
     // If the buffer was in curwin and the window has changed, go back to that
     // window, if it still exists.  This avoids that ":edit x" triggering a
     // "tabnext" BufUnload autocmd leaves a window behind without a buffer.
-    if (is_curwin && curwin != the_curwin &&  win_valid_any_tab(the_curwin))
+    if (is_curwin && curwin != the_curwin && win_valid_any_tab(the_curwin))
     {
 	block_autocmds();
 	goto_tabpage_win(the_curtab, the_curwin);
@@ -782,15 +782,12 @@ aucmd_abort:
 
     /*
      * Remove the buffer from the list.
+     * Do not wipe out the buffer if it is used in a window.
      */
-    if (wipe_buf)
+    if (wipe_buf && buf->b_nwindows <= 0)
     {
 	tabpage_T	*tp;
 	win_T		*wp;
-
-	// Do not wipe out the buffer if it is used in a window.
-	if (buf->b_nwindows > 0)
-	    return FALSE;
 
 	FOR_ALL_TAB_WINDOWS(tp, wp)
 	    mark_forget_file(wp, buf->b_fnum);
@@ -1437,19 +1434,10 @@ do_buffer_ext(
     if ((flags & DOBUF_NOPOPUP) && bt_popup(buf) && !bt_terminal(buf))
 	return OK;
 #endif
-    if (action == DOBUF_GOTO && buf != curbuf)
-    {
-	if (!check_can_set_curbuf_forceit((flags & DOBUF_FORCEIT) != 0))
-	    // disallow navigating to another buffer when 'winfixbuf' is applied
-	    return FAIL;
-	if (buf->b_locked_split)
-	{
-	    // disallow navigating to a closing buffer, which like splitting,
-	    // can result in more windows displaying it
-	    emsg(_(e_cannot_switch_to_a_closing_buffer));
-	    return FAIL;
-	}
-    }
+    if (action == DOBUF_GOTO && buf != curbuf
+	    && !check_can_set_curbuf_forceit((flags & DOBUF_FORCEIT) != 0))
+	// disallow navigating to another buffer when 'winfixbuf' is applied
+	return FAIL;
 
     if ((action == DOBUF_GOTO || action == DOBUF_SPLIT)
 						  && (buf->b_flags & BF_DUMMY))
@@ -1657,15 +1645,17 @@ do_buffer_ext(
     /*
      * make "buf" the current buffer
      */
-    if (action == DOBUF_SPLIT)	    // split window first
+    // If 'switchbuf' is set jump to the window containing "buf".
+    if (action == DOBUF_SPLIT && swbuf_goto_win_with_buf(buf) != NULL)
+	return OK;
+    // Whether splitting or not, don't open a closing buffer in more windows.
+    if (buf != curbuf && buf->b_locked_split)
     {
-	// If 'switchbuf' is set jump to the window containing "buf".
-	if (swbuf_goto_win_with_buf(buf) != NULL)
-	    return OK;
-
-	if (win_split(0, 0) == FAIL)
-	    return FAIL;
+	emsg(_(e_cannot_switch_to_a_closing_buffer));
+	return FAIL;
     }
+    if (action == DOBUF_SPLIT && win_split(0, 0) == FAIL) // split window first
+	return FAIL;
 
     // go to current buffer - nothing to do
     if (buf == curbuf)
