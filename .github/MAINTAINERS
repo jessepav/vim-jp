@@ -48,6 +48,7 @@ runtime/colors/wildcharm.vim				@habamax @romainl @neutaaaaan
 runtime/colors/zaibatsu.vim				@habamax @romainl @neutaaaaan
 runtime/colors/zellner.vim				@habamax @romainl @neutaaaaan
 runtime/compiler/biome.vim				@Konfekt
+runtime/compiler/cabal.vim				@mateoxh
 runtime/compiler/checkstyle.vim				@dkearns
 runtime/compiler/cm3.vim				@dkearns
 runtime/compiler/context.vim				@lifepillar
@@ -699,6 +700,7 @@ runtime/syntax/xs.vim					@petdance
 runtime/syntax/xslt.vim					@Boobies
 runtime/syntax/zserio.vim				@dpelle
 runtime/syntax/zsh.vim					@chrisbra
+runtime/tools/preproc_indent.vim			@h-east
 runtime/tutor/tutor1.eo					@dpelle
 runtime/tutor/tutor1.fr					@dpelle
 runtime/tutor/tutor1.ru					@RestorerZ
