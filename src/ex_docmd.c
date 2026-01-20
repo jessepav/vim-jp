@@ -6062,9 +6062,9 @@ ex_highlight(exarg_T *eap)
  * (because of an error).  May need to restore the terminal mode.
  */
     void
-not_exiting(void)
+not_exiting(int save_exiting)
 {
-    exiting = FALSE;
+    exiting = save_exiting;
     settmode(TMODE_RAW);
 }
 
@@ -6139,6 +6139,7 @@ ex_quit(exarg_T *eap)
     netbeansForcedQuit = eap->forceit;
 #endif
 
+    int save_exiting = exiting;
     /*
      * If there is only one relevant window we will exit.
      */
@@ -6151,7 +6152,7 @@ ex_quit(exarg_T *eap)
 	    || check_more(TRUE, eap->forceit) == FAIL
 	    || (only_one_window() && check_changed_any(eap->forceit, TRUE)))
     {
-	not_exiting();
+	not_exiting(save_exiting);
     }
     else
     {
@@ -6163,7 +6164,7 @@ ex_quit(exarg_T *eap)
 	// :h|wincmd w|q      - quit
 	if (only_one_window() && (ONE_WINDOW || eap->addr_count == 0))
 	    getout(0);
-	not_exiting();
+	not_exiting(save_exiting);
 #ifdef FEAT_GUI
 	need_mouse_correct = TRUE;
 #endif
@@ -6219,10 +6220,11 @@ ex_quit_all(exarg_T *eap)
 {
     if (before_quit_all(eap) == FAIL)
 	return;
+    int save_exiting = exiting;
     exiting = TRUE;
     if (eap->forceit || !check_changed_any(FALSE, FALSE))
 	getout(0);
-    not_exiting();
+    not_exiting(save_exiting);
 }
 
 /*
@@ -6568,7 +6570,9 @@ tabpage_close(int forceit)
     if (window_layout_locked(CMD_tabclose))
 	return;
 
-    trigger_tabclosedpre(curtab, TRUE);
+    trigger_tabclosedpre(curtab);
+    curtab->tp_did_tabclosedpre = TRUE;
+    tabpage_T *save_curtab = curtab;
 
     // First close all the windows but the current one.  If that worked then
     // close the last window in this tab, that will close it.
@@ -6576,6 +6580,10 @@ tabpage_close(int forceit)
 	close_others(TRUE, forceit);
     if (ONE_WINDOW)
 	ex_win_close(forceit, curwin, NULL);
+    if (curtab == save_curtab)
+	// When closing the tab page failed, reset tp_did_tabclosedpre so that
+	// TabClosedPre behaves consistently on next :close vs :tabclose.
+	curtab->tp_did_tabclosedpre = FALSE;
 #ifdef FEAT_GUI
     need_mouse_correct = TRUE;
 #endif
@@ -6596,7 +6604,8 @@ tabpage_close_other(tabpage_T *tp, int forceit)
     if (window_layout_locked(CMD_SIZE))
 	return;
 
-    trigger_tabclosedpre(tp, TRUE);
+    trigger_tabclosedpre(tp);
+    tp->tp_did_tabclosedpre = TRUE;
 
     // Limit to 1000 windows, autocommands may add a window while we close
     // one.  OK, so I'm paranoid...
@@ -6605,10 +6614,22 @@ tabpage_close_other(tabpage_T *tp, int forceit)
 	wp = tp->tp_firstwin;
 	ex_win_close(forceit, wp, tp);
 
-	// Autocommands may delete the tab page under our fingers and we may
-	// fail to close a window with a modified buffer.
-	if (!valid_tabpage(tp) || tp->tp_firstwin == wp)
+	// Autocommands may delete the tab page under our fingers.
+	if (!valid_tabpage(tp))
 	    break;
+	// We may fail to close a window with a modified buffer.
+	if (tp->tp_firstwin == wp)
+	{
+	    done = 1000;
+	    break;
+	}
+    }
+    if (done >= 1000)
+    {
+	// When closing the tab page failed, reset tp_did_tabclosedpre so that
+	// TabClosedPre behaves consistently on next :close vs :tabclose.
+	tp->tp_did_tabclosedpre = FALSE;
+	return;
     }
 
     apply_autocmds(EVENT_TABCLOSED, NULL, NULL, FALSE, curbuf);
@@ -6725,6 +6746,7 @@ ex_exit(exarg_T *eap)
 	return;
     }
 
+    int save_exiting = exiting;
     /*
      * we plan to exit if there is only one relevant window
      */
@@ -6739,13 +6761,13 @@ ex_exit(exarg_T *eap)
 	    || check_more(TRUE, eap->forceit) == FAIL
 	    || (only_one_window() && check_changed_any(eap->forceit, FALSE)))
     {
-	not_exiting();
+	not_exiting(save_exiting);
     }
     else
     {
 	if (only_one_window())	    // quit last window, exit Vim
 	    getout(0);
-	not_exiting();
+	not_exiting(save_exiting);
 #ifdef FEAT_GUI
 	need_mouse_correct = TRUE;
 #endif
