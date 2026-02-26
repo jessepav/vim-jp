@@ -3418,7 +3418,9 @@ did_set_previewpopup(optset_T *args UNUSED)
     if (parse_previewpopup(NULL) == FAIL)
 	return e_invalid_argument;
 
+# if defined(FEAT_QUICKFIX)
     popup_close_info();
+# endif
     return NULL;
 }
 

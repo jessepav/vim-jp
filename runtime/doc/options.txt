@@ -1,4 +1,4 @@
-*options.txt*	For Vim version 9.2.  Last change: 2026 Feb 24
+*options.txt*	For Vim version 9.2.  Last change: 2026 Feb 25
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -3595,6 +3595,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 		|SafeState|,
 		|SafeStateAgain|,
 		|SessionLoadPost|,
+		|SessionLoadPre|,
 		|SessionWritePost|,
 		|ShellCmdPost|,
 		|SigUSR1|,

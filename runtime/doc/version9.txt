@@ -1,4 +1,4 @@
-*version9.txt*	For Vim version 9.2.  Last change: 2026 Feb 24
+*version9.txt*	For Vim version 9.2.  Last change: 2026 Feb 25
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -52592,6 +52592,7 @@ Other ~
 -----
 - The new |xdg.vim| script for full XDG compatibility is included.
 - |ConPTY| support is considered stable as of Windows 11.
+- Support for "dap" channel mode for the |debug-adapter-protocol|.
 
 							*changed-9.3*
 Changed~
@@ -52600,6 +52601,11 @@ Changed~
 							*added-9.3*
 Added ~
 -----
+Various syntax, indent and other plugins were added.
+
+Autocommands: ~
+
+|SessionLoadPre|	before loading a |Session| file
 
 ==============================================================================
 PATCHES						*patches-9.3* *bug-fixes-9.3*
