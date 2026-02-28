@@ -627,6 +627,7 @@ screen_line(
 		&& ScreenLines[off_from] == ' '
 		&& (!enc_utf8 || ScreenLinesUC[off_from] == 0)
 		&& ScreenLines[off_to] == 0
+		&& (!enc_utf8 || ScreenLinesUC[off_to] == 0)
 		&& off_to > 0
 		&& enc_utf8 && ScreenLinesUC[off_to - 1] != 0
 		&& utf_char2cells(ScreenLinesUC[off_to - 1]) == 2)
@@ -639,7 +640,8 @@ screen_line(
 		&& (flags & SLF_POPUP)
 		&& ScreenLines[off_from] == ' '
 		&& (!enc_utf8 || ScreenLinesUC[off_from] == 0)
-		&& ScreenLines[off_to] != 0)
+		&& (ScreenLines[off_to] != 0
+		    || (enc_utf8 && ScreenLinesUC[off_to] != 0)))
 	{
 	    int bg_char_cells = 1;
 	    if (enc_utf8 && ScreenLinesUC[off_to] != 0)
@@ -652,8 +654,23 @@ screen_line(
 	    {
 		if (col + 1 >= endcol || off_from + 1 >= max_off_from
 						   || off_to + 1 >= max_off_to)
-		    // At the edge of the screen, skip wide char.
+		{
+		    // Wide char doesn't fit at the edge.  Replace with a
+		    // blended space so opacity is still applied.
+		    int char_attr = ScreenAttrs[off_from];
+		    int popup_attr = get_wcr_attr(screen_opacity_popup);
+		    int combined = hl_combine_attr(popup_attr, char_attr);
+		    int blend = screen_opacity_popup->w_popup_blend;
+		    ScreenLines[off_to] = ' ';
+		    if (enc_utf8)
+			ScreenLinesUC[off_to] = 0;
+		    ScreenAttrs[off_to] = hl_blend_attr(ScreenAttrs[off_to],
+						    combined, blend, TRUE);
+		    screen_char(off_to, row, col + coloff);
+		    opacity_blank = TRUE;
+		    redraw_this = FALSE;
 		    goto skip_opacity;
+		}
 		int next_off_from = off_from + 1;
 		if (!(ScreenLines[next_off_from] == ' '
 			&& (!enc_utf8 || ScreenLinesUC[next_off_from] == 0)))
@@ -679,6 +696,30 @@ screen_line(
 	    // For wide background character, also update the second cell.
 	    if (bg_char_cells == 2)
 		ScreenAttrs[off_to + 1] = ScreenAttrs[off_to];
+	    redraw_this = FALSE;
+	}
+	// When a popup space overlaps the second half of a destroyed wide
+	// character (e.g., the first half was overwritten by popup content),
+	// the underlying cell has ScreenLines == 0 and no valid wide char
+	// at the previous cell.  Apply opacity blending so that the cell
+	// matches surrounding opacity-blended cells instead of appearing
+	// as a solid-colored gap.
+	else if (screen_opacity_popup != NULL
+		&& (flags & SLF_POPUP)
+		&& ScreenLines[off_from] == ' '
+		&& (!enc_utf8 || ScreenLinesUC[off_from] == 0)
+		&& ScreenLines[off_to] == 0
+		&& (!enc_utf8 || ScreenLinesUC[off_to] == 0))
+	{
+	    int char_attr = ScreenAttrs[off_from];
+	    int popup_attr = get_wcr_attr(screen_opacity_popup);
+	    int combined = hl_combine_attr(popup_attr, char_attr);
+	    int blend = screen_opacity_popup->w_popup_blend;
+	    ScreenLines[off_to] = ' ';
+	    ScreenAttrs[off_to] = hl_blend_attr(ScreenAttrs[off_to],
+						combined, blend, TRUE);
+	    screen_char(off_to, row, col + coloff);
+	    opacity_blank = TRUE;
 	    redraw_this = FALSE;
 	}
 skip_opacity:
@@ -784,7 +825,11 @@ skip_opacity:
 		}
 	    }
 	    if (char_cells == 2)
+	    {
 		ScreenLines[off_to + 1] = ScreenLines[off_from + 1];
+		if (enc_utf8)
+		    ScreenLinesUC[off_to + 1] = 0;
+	    }
 
 #if defined(FEAT_GUI) || defined(UNIX)
 	    // The bold trick makes a single column of pixels appear in the
