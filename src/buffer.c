@@ -5296,7 +5296,8 @@ build_stl_str_hl(
 	}
 	width = maxwidth;
     }
-    else if (width < maxwidth && outputlen + maxwidth - width + 1 < outlen)
+    else if (width < maxwidth &&
+	    outputlen + (maxwidth - width) * MB_CHAR2LEN(fillchar) + 1 < outlen)
     {
 	// Find how many separators there are, which we will use when
 	// figuring out how many groups there are.
