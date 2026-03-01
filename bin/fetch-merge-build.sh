@@ -16,7 +16,7 @@ elif [[ "$1" == @(-p|--merge-push) ]]; then
     git push
 elif [[ "$1" == @(-b|--build) ]]; then
     cd src
-    make && make install
+    make -j 2 && make install
     cd /opt/vim9/share/vim/vim92/plugin
     # We're going to leave these alone:
     # matchparen.vim tohtml.vim
