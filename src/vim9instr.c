@@ -1910,8 +1910,11 @@ generate_BLOBAPPEND(cctx_T *cctx)
 }
 
 /*
- * get the instruction type for a function call: ISN_METHODCALL, ISN_DCALL, or
- * ISN_UCALL.
+ * Get the instruction type for a function call:
+ *   ISN_METHODCALL - object method call via interface
+ *   ISN_DCALL      - compiled def function call
+ *   ISN_UCALL      - uncompiled function, or
+ *                    compiled script-local function called from a lambda
  */
     static isntype_T
 isn_get_calltype(
@@ -1919,11 +1922,23 @@ isn_get_calltype(
 	ufunc_T	    *ufunc,
 	class_T	    *cl)
 {
-    return cl != NULL ? ISN_METHODCALL
-	: (ufunc->uf_def_status != UF_NOT_COMPILED
-		&& ((cctx->ctx_ufunc->uf_flags & FC_LAMBDA) == 0
-		    || ufunc->uf_name[0] != K_SPECIAL))
-	? ISN_DCALL : ISN_UCALL;
+    if (cl != NULL)
+	return ISN_METHODCALL;
+
+    if (ufunc->uf_def_status == UF_NOT_COMPILED)
+	return ISN_UCALL;
+
+    // function invoked from a lambda
+    if (cctx->ctx_ufunc->uf_flags & FC_LAMBDA)
+    {
+	// Script-local funcs in a lambda may be redefined by re-sourcing;
+	// resolve by name at runtime.  Patched to ISN_DCALL on next call once
+	// recompiled.
+	if (ufunc->uf_name[0] == K_SPECIAL)
+	    return ISN_UCALL;
+    }
+
+    return ISN_DCALL;
 }
 
 /*

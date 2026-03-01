@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Vim\n"
 "Report-Msgid-Bugs-To: vim-dev@vim.org\n"
-"POT-Creation-Date: 2026-02-27 21:04+0000\n"
+"POT-Creation-Date: 2026-03-01 17:05+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -9544,6 +9544,9 @@ msgid "0, 1 or 2; when to use a status line for the last window"
 msgstr ""
 
 msgid "alternate format to be used for a status line"
+msgstr ""
+
+msgid "optional settings for the status line"
 msgstr ""
 
 msgid "make all windows the same size when adding/removing windows"
