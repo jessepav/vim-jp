@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Vim\n"
 "Report-Msgid-Bugs-To: vim-dev@vim.org\n"
-"POT-Creation-Date: 2026-03-01 17:05+0000\n"
+"POT-Creation-Date: 2026-03-01 19:26+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -8843,6 +8843,9 @@ msgid "E1570: Cannot use redraw_listener_add in a redraw listener callback"
 msgstr ""
 
 msgid "E1571: Must specify at least one callback for redraw_listener_add"
+msgstr ""
+
+msgid "E1572: 'listchars' field \"leadtab\" requires \"tab\" to be specified"
 msgstr ""
 
 #. type of cmdline window or 0
