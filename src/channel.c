@@ -1440,7 +1440,7 @@ channel_listen_func(typval_T *argvars)
 	    return NULL;
 	}
 	port = strtol((char *)(p + 1), &rest, 10);
-	if (port <= 0 || port >= 65536 || *rest != NUL)
+	if (port < 0 || port >= 65536 || *rest != NUL)
 	{
 	    semsg(_(e_invalid_argument_str), address);
 	    return NULL;
@@ -1459,7 +1459,7 @@ channel_listen_func(typval_T *argvars)
 	    return NULL;
 	}
 	port = strtol((char *)(p + 1), &rest, 10);
-	if (port <= 0 || port >= 65536 || *rest != NUL)
+	if (port < 0 || port >= 65536 || *rest != NUL)
 	{
 	    semsg(_(e_invalid_argument_str), address);
 	    return NULL;
@@ -1511,6 +1511,10 @@ channel_listen(
     int			val = 1;
     channel_T		*channel;
 
+#ifdef MSWIN
+    channel_init_winsock();
+#endif
+
     channel = add_channel();
     if (channel == NULL)
     {
@@ -1555,7 +1559,7 @@ channel_listen(
     }
 
 #ifdef MSWIN
-    if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR,
+    if (setsockopt(sd, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
 				    (const char *)&val, sizeof(val)) < 0)
 #else
     if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR,
@@ -1591,10 +1595,20 @@ channel_listen(
 	return NULL;
     }
 
+    // When port 0 was specified, retrieve the actual port assigned by the OS.
+    if (port_in == 0)
+    {
+	struct sockaddr_in	addr;
+	socklen_t		addr_len = sizeof(addr);
+
+	if (getsockname(sd, (struct sockaddr *)&addr, &addr_len) == 0)
+	    port_in = ntohs(addr.sin_port);
+    }
+
     channel->ch_listen = TRUE;
     channel->CH_SOCK_FD = (sock_T)sd;
     channel->ch_nb_close_cb = nb_close_cb;
-    channel->ch_hostname = (char *)vim_strsave((char_u *)hostname);
+    channel->ch_hostname = (char *)vim_strsave((char_u *)(hostname != NULL ? hostname : ""));
     channel->ch_port = port_in;
     channel->ch_to_be_closed |= (1U << PART_SOCK);
 
