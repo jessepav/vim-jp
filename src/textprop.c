@@ -965,7 +965,7 @@ f_prop_add_list(typval_T *argvars, typval_T *rettv UNUSED)
     // This must be done _before_ we start adding properties because property
     // changes trigger buffer (memline) reorganisation, which needs this flag
     // to be correctly set.
-    buf->b_has_textprop = TRUE;  // this is never reset
+    buf->b_has_textprop = true;  // this is never reset
     FOR_ALL_LIST_ITEMS(argvars[1].vval.v_list, li)
     {
 	if (li->li_tv.v_type != VAR_LIST || li->li_tv.vval.v_list == NULL)
@@ -1187,7 +1187,7 @@ prop_add_common(
     // This must be done _before_ we add the property because property changes
     // trigger buffer (memline) reorganisation, which needs this flag to be
     // correctly set.
-    buf->b_has_textprop = TRUE;  // this is never reset
+    buf->b_has_textprop = true;  // this is never reset
 
     prop_add_one(buf, type_name, id, text, text_padding_left, flags,
 				    start_lnum, end_lnum, start_col, end_col);
@@ -1727,23 +1727,35 @@ prop_fill_dict(dict_T *dict, textprop_T *prop, buf_T *buf)
 	dict_add_number(dict, "type_bufnr", 0);
     if (virtualtext_prop)
     {
+	string_T    text_align = {NULL, 0};
+
 	// virtual text property - u.tp_text must be set by caller
 	dict_add_string(dict, "text", prop->u.tp_text);
 
 	// text_align
-	char_u	    *text_align = NULL;
 	if (prop->tp_flags & TP_FLAG_ALIGN_RIGHT)
-	    text_align = (char_u *)"right";
+	{
+	    text_align.string = (char_u *)"right";
+	    text_align.length = STRLEN_LITERAL("right");
+	}
 	else if (prop->tp_flags & TP_FLAG_ALIGN_ABOVE)
-	    text_align = (char_u *)"above";
+	{
+	    text_align.string = (char_u *)"above";
+	    text_align.length = STRLEN_LITERAL("above");
+	}
 	else if (prop->tp_flags & TP_FLAG_ALIGN_BELOW)
-	    text_align = (char_u *)"below";
-	if (text_align != NULL)
-	    dict_add_string(dict, "text_align", text_align);
+	{
+	    text_align.string = (char_u *)"below";
+	    text_align.length = STRLEN_LITERAL("below");
+	}
+	if (text_align.string != NULL)
+	    dict_add_string_len(dict, "text_align",
+		text_align.string, (int)text_align.length);
 
 	// text_wrap
 	if (prop->tp_flags & TP_FLAG_WRAP)
-	    dict_add_string(dict, "text_wrap", (char_u *)"wrap");
+	    dict_add_string_len(dict, "text_wrap",
+		(char_u *)"wrap", STRLEN_LITERAL("wrap"));
 	if (prop->tp_padleft != 0)
 	    dict_add_number(dict, "text_padding_left", prop->tp_padleft);
     }
