@@ -1734,20 +1734,11 @@ prop_fill_dict(dict_T *dict, textprop_T *prop, buf_T *buf)
 
 	// text_align
 	if (prop->tp_flags & TP_FLAG_ALIGN_RIGHT)
-	{
-	    text_align.string = (char_u *)"right";
-	    text_align.length = STRLEN_LITERAL("right");
-	}
+	    STR_LITERAL_SET(text_align, "right");
 	else if (prop->tp_flags & TP_FLAG_ALIGN_ABOVE)
-	{
-	    text_align.string = (char_u *)"above";
-	    text_align.length = STRLEN_LITERAL("above");
-	}
+	    STR_LITERAL_SET(text_align, "above");
 	else if (prop->tp_flags & TP_FLAG_ALIGN_BELOW)
-	{
-	    text_align.string = (char_u *)"below";
-	    text_align.length = STRLEN_LITERAL("below");
-	}
+	    STR_LITERAL_SET(text_align, "below");
 	if (text_align.string != NULL)
 	    dict_add_string_len(dict, "text_align",
 		text_align.string, (int)text_align.length);
@@ -1976,12 +1967,16 @@ f_prop_find(typval_T *argvars, typval_T *rettv)
 	    // after `col`, depending on the search direction.
 	    if (lnum == lnum_start)
 	    {
+		bool is_floating_vtext = prop.tp_id < 0
+		    && prop.tp_col == MAXCOL;
 		if (dir == BACKWARD)
 		{
-		    if (prop.tp_col > col)
+		    // Virtual text with MAXCOL always matches any column
+		    if (!is_floating_vtext && prop.tp_col > col)
 			continue;
 		}
-		else if (prop.tp_col + prop.tp_len - (prop.tp_len != 0) < col)
+		else if (!is_floating_vtext
+		    && prop.tp_col + prop.tp_len - (prop.tp_len != 0) < col)
 		    continue;
 	    }
 	    if (both ? prop.tp_id == id && prop.tp_type == type_id

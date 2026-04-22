@@ -67,30 +67,27 @@ static char *ctrl_x_msgs[] =
 };
 
 #if defined(FEAT_COMPL_FUNC) || defined(FEAT_EVAL)
-# define STRING_INIT(s) \
-    {(char_u *)(s), STRLEN_LITERAL(s)}
 static string_T ctrl_x_mode_names[] = {
-    STRING_INIT("keyword"),
-    STRING_INIT("ctrl_x"),
-    STRING_INIT("scroll"),
-    STRING_INIT("whole_line"),
-    STRING_INIT("files"),
-    STRING_INIT("tags"),
-    STRING_INIT("path_patterns"),
-    STRING_INIT("path_defines"),
-    STRING_INIT("unknown"),		    // CTRL_X_FINISHED
-    STRING_INIT("dictionary"),
-    STRING_INIT("thesaurus"),
-    STRING_INIT("cmdline"),
-    STRING_INIT("function"),
-    STRING_INIT("omni"),
-    STRING_INIT("spell"),
+    STR_LITERAL_INIT("keyword"),
+    STR_LITERAL_INIT("ctrl_x"),
+    STR_LITERAL_INIT("scroll"),
+    STR_LITERAL_INIT("whole_line"),
+    STR_LITERAL_INIT("files"),
+    STR_LITERAL_INIT("tags"),
+    STR_LITERAL_INIT("path_patterns"),
+    STR_LITERAL_INIT("path_defines"),
+    STR_LITERAL_INIT("unknown"),		    // CTRL_X_FINISHED
+    STR_LITERAL_INIT("dictionary"),
+    STR_LITERAL_INIT("thesaurus"),
+    STR_LITERAL_INIT("cmdline"),
+    STR_LITERAL_INIT("function"),
+    STR_LITERAL_INIT("omni"),
+    STR_LITERAL_INIT("spell"),
     {NULL, 0},		    // CTRL_X_LOCAL_MSG is only used in "ctrl_x_msgs"
-    STRING_INIT("eval"),
-    STRING_INIT("cmdline"),
-    STRING_INIT("register"),
+    STR_LITERAL_INIT("eval"),
+    STR_LITERAL_INIT("cmdline"),
+    STR_LITERAL_INIT("register"),
 };
-# undef STRING_INIT
 #endif
 
 /*
@@ -497,10 +494,6 @@ has_compl_option(int dict_opt)
     int
 vim_is_ctrl_x_key(int c)
 {
-    // Always allow ^R - let its results then be checked
-    if (c == Ctrl_R && ctrl_x_mode != CTRL_X_REGISTER)
-	return TRUE;
-
     // Accept <PageUp> and <PageDown> if the popup menu is visible.
     if (ins_compl_pum_key(c))
 	return TRUE;
@@ -3041,7 +3034,7 @@ ins_compl_stop(int c, int prev_mode, int retval)
     }
     compl_autocomplete = FALSE;
     compl_from_nonkeyword = FALSE;
-    compl_best_matches = 0;
+    compl_num_bests = 0;
     compl_ins_end_col = 0;
 
     if (c == Ctrl_C && cmdwin_type != 0)
@@ -3158,7 +3151,7 @@ ins_compl_prep(int c)
     else if (ctrl_x_mode_not_default())
     {
 	// We're already in CTRL-X mode, do we stay in it?
-	if (!vim_is_ctrl_x_key(c))
+	if (c != Ctrl_R && !vim_is_ctrl_x_key(c))
 	{
 	    ctrl_x_mode = ctrl_x_mode_scroll() ? CTRL_X_NORMAL : CTRL_X_FINISHED;
 	    edit_submode = NULL;
@@ -3186,7 +3179,7 @@ ins_compl_prep(int c)
 
     // reset continue_* if we left expansion-mode, if we stay they'll be
     // (re)set properly in ins_complete()
-    if (!vim_is_ctrl_x_key(c))
+    if (c != Ctrl_R && !vim_is_ctrl_x_key(c))
     {
 	compl_cont_status = 0;
 	compl_cont_mode = 0;
@@ -5802,7 +5795,8 @@ find_common_prefix(size_t *prefix_len, int curbuf_only)
 	    }
 
 	    if (!match_limit_exceeded && (!curbuf_only
-			|| cpt_sources_array[cur_source].cs_flag == '.'))
+			|| (cur_source != -1
+			    && cpt_sources_array[cur_source].cs_flag == '.')))
 	    {
 		if (first == NULL && STRNCMP(ins_compl_leader(),
 			    compl->cp_str.string, ins_compl_leader_len()) == 0)
@@ -6083,7 +6077,7 @@ find_next_completion_match(
 		    compl_shown_match = compl_shown_match->cp_next;
 		    --compl_pending;
 		}
-		if (compl_pending < 0 && compl_shown_match->cp_prev != NULL)
+		else if (compl_pending < 0 && compl_shown_match->cp_prev != NULL)
 		{
 		    compl_shown_match = compl_shown_match->cp_prev;
 		    ++compl_pending;
