@@ -1,4 +1,4 @@
-*options.txt*	For Vim version 9.2.  Last change: 2026 Apr 29
+*options.txt*	For Vim version 9.2.  Last change: 2026 May 01
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -2393,6 +2393,9 @@ A jump table for the options with a short description can be found at |Q_op|.
 		close		show close button: "on" (default) or "off"
 		height		maximum height of the popup
 		highlight	popup highlight group (default: PmenuSel)
+		opacity		opacity percentage 0-100 (default 100, fully
+				opaque).  When less than 100, content beneath
+				the popup shows through.
 		resize		show resize handle: "on" (default) or "off"
 		shadow		"off" (default) or "on" using |hl-PmenuShadow|
 		width		maximum width of the popup
@@ -2400,6 +2403,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 	Example: >
 		:set completepopup=height:10,border:single,highlight:InfoPopup
 		:set completepopup=width:60,border:custom:─;│;─;│;┌;┐;┘;└
+		:set completepopup=border:round,opacity:80
 <
 	When "align" is set to "item", the popup is positioned near the
 	selected item and moves as the selection changes.
@@ -7007,7 +7011,8 @@ A jump table for the options with a short description can be found at |Q_op|.
 				of 'fillchars' option.
 	  opacity:{n}		opacity percentage 0-100 (default 100).
 				When less than 100, background content shows
-				through the popup menu.
+				through the popup menu.  Requires the GUI,
+				'termguicolors', or a 256-color terminal.
 
 	Flags (no value):
 	  margin		adds one-cell spacing inside the left and
@@ -8044,6 +8049,9 @@ A jump table for the options with a short description can be found at |Q_op|.
 		search count statistics.  The maximum limit can be set with
 		the 'maxsearchcount' option, see also |searchcount()|
 		function.
+	  u	don't give undo and redo messages like			*shm-u*
+		"1 line less; before #1  1 second ago", "Already at oldest
+		change" or "Already at newest change"
 
 	This gives you the opportunity to avoid that a change between buffers
 	requires you to hit <Enter>, but still gives as useful a message as
