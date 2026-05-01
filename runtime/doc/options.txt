@@ -1,4 +1,4 @@
-*options.txt*	For Vim version 9.2.  Last change: 2026 Apr 27
+*options.txt*	For Vim version 9.2.  Last change: 2026 Apr 29
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -9052,33 +9052,22 @@ A jump table for the options with a short description can be found at |Q_op|.
 	Optional settings for the |tabpanel|,  It can consist of the following
 	items.  Items must be separated by a comma.
 
-		align:{text}	Specifies the position of the tabpanel.
-				Currently supported positions are:
-
-				left	left-side
+	    align:{text}    Specifies the position of the tabpanel.
+			    Currently supported positions are:
+				left	left-side  (default)
 				right	right-side
-
-				(default "left")
-
-		columns:{n}	Number of columns of the tabpanel.
-				If this value is 0 or less than 'columns', the
-				tabpanel will not be displayed.
-				(default 20)
-
-		scrollbar	Reserve a one-column scrollbar at the right
-				edge of the tabpanel showing the current
-				scroll position.  The scrollbar uses the
-				|hl-PmenuSbar| and |hl-PmenuThumb| highlight
-				groups for the track and thumb respectively.
-				Clicking on the scrollbar column jumps the
-				thumb to that position; the thumb can also be
-				dragged.  See |tabpanel-scroll|.
-
-		vert		Use a vertical separator for tabpanel.
-				The vertical separator character is taken from
-				"tpl_vert" in 'fillchars'.
-				(default off)
-
+	    columns:{n}	    Number of columns of the tabpanel.  (default 20)
+			    If this value is 0 or less than 'columns', the
+			    tabpanel will not be displayed.
+	    scrollbar	    A one-column scrollbar is always displayed at the
+			    right edge of the tabpanel, regardless of the
+			    "align:" setting.  (default off)
+			    See |tabpanel-scroll|.
+	    vert	    The vertical separator is drawn at the boundary
+			    between the tabpanel and the buffer area.
+			    (default off)
+			    The character to be drawn uses "tpl_vert" from
+			    'fillchars'.
 	Examples: >
 		:set tabpanelopt=columns:16,align:right
 		:set tabpanelopt=
@@ -10052,6 +10041,14 @@ A jump table for the options with a short description can be found at |Q_op|.
 		letter.  Thus "KEEPTHIS and "K_L_M" are stored, but "KeepThis"
 		and "_K_L_M" are not.  Nested List and Dict items may not be
 		read back correctly, you end up with an empty item.
+
+		Restoring |List|, |Dictionary| and |Tuple| variables is done by
+		parsing their textual form with the Vim expression evaluator.
+		Reading a viminfo file with "!" enabled is therefore only safe
+		when the file is trusted.  In particular, do not enable "!"
+		before reading a viminfo file you obtained from another user,
+		downloaded, or that is writable by another account.  See
+		also |viminfo-security|.
 							*viminfo-quote*
 	"	Maximum number of lines saved for each register.  Old name of
 		the '<' item, with the disadvantage that you need to put a
@@ -10409,8 +10406,12 @@ A jump table for the options with a short description can be found at |Q_op|.
 			applies to buffer name completion.
 	"noselect"	If 'wildmenu' is enabled, show the menu but do not
 			preselect the first item.
-	If only one match exists, it is completed fully, unless "noselect" is
-	specified.
+	"noinsert"	If 'wildmenu' is enabled, show the menu and preselect
+			the first match, but do not insert it in the
+			command line.  If both "noinsert" and "noselect" are
+			present, "noselect" takes precedence.
+	If only one match exists, it is completed fully, unless "noselect" or
+	"noinsert" is specified.
 
 	Some useful combinations of colon-separated values:
 	"longest:full"		Start with the longest common string and show

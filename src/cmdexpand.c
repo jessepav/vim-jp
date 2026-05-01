@@ -346,7 +346,7 @@ nextwild(
 	    cmdline_orig.length = ccline->cmdlen;
     }
 
-    if (p != NULL && !got_int && !(options & WILD_NOSELECT))
+    if (p != NULL && !got_int && !(options & (WILD_NOSELECT | WILD_NOINSERT)))
     {
 	size_t	plen = STRLEN(p);
 	int	difflen;
@@ -380,7 +380,8 @@ nextwild(
 
     if (xp->xp_numfiles <= 0 && p == NULL)
 	beep_flush();
-    else if (xp->xp_numfiles == 1 && !(options & WILD_NOSELECT)
+    else if (xp->xp_numfiles == 1
+	    && !(options & (WILD_NOSELECT | WILD_NOINSERT))
 	    && !wild_navigate)
 	// free expanded pattern
 	(void)ExpandOne(xp, NULL, NULL, 0, WILD_FREE);
@@ -1253,7 +1254,7 @@ showmatches_oneline(
 		// Expansion was done before and special characters
 		// were escaped, need to halve backslashes.  Also
 		// $HOME has been replaced with ~/.
-		exp_path = expand_env_save_opt(matches[j], TRUE);
+		exp_path = expand_env_save_opt(matches[j], TRUE, NULL);
 		path = exp_path != NULL ? exp_path : matches[j];
 		halved_slash = backslash_halve_save(path);
 		isdir = mch_isdir(halved_slash != NULL ? halved_slash
@@ -1295,7 +1296,11 @@ showmatches_oneline(
  *   inserted as a normal character.
  */
     int
-showmatches(expand_T *xp, int display_wildmenu, int display_list, int noselect)
+showmatches(
+    expand_T	*xp,
+    int		display_wildmenu,
+    int		display_list,
+    int		wim_flags_arg)
 {
     cmdline_info_T	*ccline = get_cmdline_info();
     int		numMatches;
@@ -1306,6 +1311,9 @@ showmatches(expand_T *xp, int display_wildmenu, int display_list, int noselect)
     int		columns;
     int		attr;
     int		showtail;
+    int		noselect = (wim_flags_arg & WIM_NOSELECT);
+    int		noinsert = (wim_flags_arg & WIM_NOINSERT);
+    int		cmdline_unchanged = noselect || noinsert;
 
     if (xp->xp_numfiles == -1)
     {
@@ -1328,7 +1336,7 @@ showmatches(expand_T *xp, int display_wildmenu, int display_list, int noselect)
 	    && vim_strchr(p_wop, WOP_PUM) != NULL)
     {
 	int retval = cmdline_pum_create(ccline, xp, matches, numMatches,
-		showtail && !noselect);
+		showtail && !cmdline_unchanged);
 	if (retval == EXPAND_OK)
 	{
 	    compl_selected = noselect ? -1 : 0;
@@ -1832,9 +1840,7 @@ set_context_for_wildcard_arg(
 	// An argument can contain just about everything, except
 	// characters that end the command and white space.
 	else if (c == '|' || c == '\n' || c == '"' || (VIM_ISWHITE(c)
-#ifdef SPACE_IN_FILENAME
 		    && (!(eap != NULL && (eap->argt & EX_NOSPC)) || usefilter)
-#endif
 		    ))
 	{
 	    len = 0;  // avoid getting stuck when space is in 'isfname'
@@ -4771,7 +4777,7 @@ copy_substring_from_pos(pos_T *start, pos_T *end, char_u **match,
     segment_len = is_single_line ? (end->col - start->col)
 			: (int)(ml_get_len(start->lnum) - start->col);
     if (ga_grow(&ga, segment_len + 2) != OK)
-	return FAIL;
+	goto fail;
 
     ga_concat_len(&ga, start_ptr, segment_len);
     if (!is_single_line)
@@ -4806,13 +4812,13 @@ copy_substring_from_pos(pos_T *start, pos_T *end, char_u **match,
     word_end = find_word_end(end_line + end->col);
     segment_len = (int)(word_end - end_line);
     if (ga_grow(&ga, segment_len) != OK)
-	return FAIL;
+	goto fail;
     ga_concat_len(&ga, end_line + (is_single_line ? end->col : 0),
 	    segment_len - (is_single_line ? end->col : 0));
 
     // Null-terminate
     if (ga_grow(&ga, 1) != OK)
-	return FAIL;
+	goto fail;
     ga_append(&ga, NUL);
 
     *match = (char_u *)ga.ga_data;
@@ -4820,6 +4826,10 @@ copy_substring_from_pos(pos_T *start, pos_T *end, char_u **match,
     match_end->col = segment_len;
 
     return OK;
+
+fail:
+    ga_clear(&ga);
+    return FAIL;
 }
 
 /*

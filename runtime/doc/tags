@@ -10896,6 +10896,8 @@ tabpagewinnr()	builtin.txt	/*tabpagewinnr()*
 tabpanel	tabpage.txt	/*tabpanel*
 tabpanel-mouse	tabpage.txt	/*tabpanel-mouse*
 tabpanel-scroll	tabpage.txt	/*tabpanel-scroll*
+tabpanel_getinfo()	builtin.txt	/*tabpanel_getinfo()*
+tabpanel_scroll()	builtin.txt	/*tabpanel_scroll()*
 tag	tagsrch.txt	/*tag*
 tag-!	tagsrch.txt	/*tag-!*
 tag-binary-search	tagsrch.txt	/*tag-binary-search*
@@ -11759,6 +11761,7 @@ viminfo-r	options.txt	/*viminfo-r*
 viminfo-read	starting.txt	/*viminfo-read*
 viminfo-read-write	starting.txt	/*viminfo-read-write*
 viminfo-s	options.txt	/*viminfo-s*
+viminfo-security	starting.txt	/*viminfo-security*
 viminfo-timestamp	starting.txt	/*viminfo-timestamp*
 viminfo-write	starting.txt	/*viminfo-write*
 vimrc	starting.txt	/*vimrc*
