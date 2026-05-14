@@ -1,7 +1,7 @@
 " Creator:    Charles E Campbell
 " Previous Maintainer: Luca Saccarola <github.e41mv@aleeas.com>
 " Maintainer: This runtime file is looking for a new maintainer.
-" Last Change: 2026 May 11
+" Last Change: 2026 May 14
 " Copyright:  Copyright (C) 2016 Charles E. Campbell {{{1
 "             Permission is hereby granted to use and distribute this code,
 "             with or without modifications, provided that this copyright
@@ -5153,7 +5153,7 @@ function s:NetrwMarkFile(islocal,fname)
 
         else
             " remove filename from buffer's markfilelist
-            call filter(s:netrwmarkfilelist_{curbufnr},'v:val != a:fname')
+            call filter(s:netrwmarkfilelist_{curbufnr}, {_, v -> v !=# a:fname})
             if s:netrwmarkfilelist_{curbufnr} == []
                 " local markfilelist is empty; remove it entirely
                 call s:NetrwUnmarkList(curbufnr,curdir)
@@ -5174,7 +5174,6 @@ function s:NetrwMarkFile(islocal,fname)
 
     else
         " initialize new markfilelist
-
         let s:netrwmarkfilelist_{curbufnr}= []
         call add(s:netrwmarkfilelist_{curbufnr},substitute(a:fname,'[|@]$','',''))
 
@@ -5194,7 +5193,7 @@ function s:NetrwMarkFile(islocal,fname)
             call add(s:netrwmarkfilelist,netrw#fs#ComposePath(b:netrw_curdir,a:fname))
         else
             " remove new filename from global markfilelist
-            call filter(s:netrwmarkfilelist,'v:val != "'.dname.'"')
+            call filter(s:netrwmarkfilelist, {_, v -> v !=# dname})
             if s:netrwmarkfilelist == []
                 unlet s:netrwmarkfilelist
             endif
@@ -7217,7 +7216,7 @@ function s:NetrwTreeDisplay(dir,depth)
         " hide given patterns
         let listhide= split(g:netrw_list_hide,',')
         for pat in listhide
-            call filter(w:netrw_treedict[dir],'v:val !~ "'.escape(pat,'\\').'"')
+            call filter(w:netrw_treedict[dir], {_, v -> v !~# pat})
         endfor
 
     elseif g:netrw_hide == 2
