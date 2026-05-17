@@ -1,4 +1,4 @@
-*version9.txt*	For Vim version 9.2.  Last change: 2026 May 11
+*version9.txt*	For Vim version 9.2.  Last change: 2026 May 17
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -41880,6 +41880,9 @@ Highlighting: ~
 |hl-PmenuMatchSel|	Popup menu: highlighting of matched text in selected
 			line
 |hl-PmenuShadow|	Popup menu: highlighting of the popup shadow
+|hl-Popup|		Popup window: body, default link |hl-Pmenu|
+|hl-PopupBorder|	Popup window: border characters, default link |hl-Pmenu|
+|hl-PopupTitle|		Popup window: title, default link |hl-Pmenu|
 |hl-PreInsert|		highlighting for completion preinserted text
 |hl-TabPanel|		|tabpanel|: not active tab page label
 |hl-TabPanelFill|	|tabpanel|: filler space
@@ -52629,6 +52632,8 @@ Other ~
 - |C-indenting| detects comments better.
 - The |package-hlyank| can now optionally highlight the last put region as
   well.
+- New argument handling for user commands |:command-nargs| using the "-nars=_"
+  attribute to handle completion of single arguments with spaces as expected.
 
 Platform specific ~
 -----------------
@@ -52690,6 +52695,9 @@ Options: ~
 Highlighting: ~
 
 |hl-VertSplitNC|	Column separator of non-current window.
+|hl-Popup|		Popup window body.
+|hl-PopupBorder|	Popup window border.
+|hl-PopupTitle|		Popup window title.
 
 ==============================================================================
 PATCHES						*patches-9.3* *bug-fixes-9.3*
