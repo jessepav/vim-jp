@@ -1,4 +1,4 @@
-*options.txt*	For Vim version 9.2.  Last change: 2026 May 17
+*options.txt*	For Vim version 9.2.  Last change: 2026 May 18
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -6239,6 +6239,11 @@ A jump table for the options with a short description can be found at |Q_op|.
 	This option cannot be set from a |modeline| or in the |sandbox|, for
 	security reasons.
 
+	As an exception, `set nomodeline` is honored from within a modeline
+	even when 'modelinestrict' is on.  Other forms (`set modeline=0`,
+	`set modeline!`, `set invmodeline`) are still silently ignored.
+	This lets a file disable further modeline processing for itself.
+
 	The behaviour of 'modeline', 'modelinestrict' and 'modelineexpr' is
 	as follows:
 
@@ -9222,6 +9227,22 @@ A jump table for the options with a short description can be found at |Q_op|.
 	The use of |:set+=| and |:set-=| is preferred when adding or removing
 	file names from the list.  This avoids problems when a future version
 	uses another default.
+
+			*'tagsecure'* *'tsc'* *'notagsecure'* *'notsc'*
+'tagsecure' 'tsc'	boolean	(default on)
+			global
+	When on, Vim refuses to follow tag entries whose file field looks like
+	a URL ("scheme://..."), aborting the jump with error |E1576|.  This
+	prevents tag files from causing Vim to open URLs through |netrw|, which
+	would trigger a network request and expose netrw's URL-handling code to
+	attacker-controlled input or lead to environment exfiltration.
+
+	Tag files might be distributed alongside source code (e.g. via Git
+	repositories) and may therefore be untrustworthy.  Only disable
+	this option if you fully control the tag files Vim will read.
+
+	This option cannot be set from a |modeline| or in the |sandbox|, for
+	security reasons.
 
 				*'tagstack'* *'tgst'* *'notagstack'* *'notgst'*
 'tagstack' 'tgst'	boolean	(default on)

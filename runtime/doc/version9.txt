@@ -1,4 +1,4 @@
-*version9.txt*	For Vim version 9.2.  Last change: 2026 May 17
+*version9.txt*	For Vim version 9.2.  Last change: 2026 May 19
 
 
 		  VIM REFERENCE MANUAL	  by Bram Moolenaar
@@ -52585,6 +52585,11 @@ VERSION 9.3				*version-9.3* *version9.3* *vim-9.3*
 This section is about improvements made between version 9.2 and 9.3 and is
 work in progress.
 
+GUI ~
+-----
+- Added support for the GTK 4 GUI (via patch 9.2.0501).  Enable with
+  `--enable-gui=gtk4` configure switch at build time.
+
 Popups ~
 ------
 - Support for transparency, see |popup-opacity|.
@@ -52688,6 +52693,7 @@ Options: ~
 			configure the height.
 't_BS'			Begin synchronized update.
 't_ES'			End synchronized update.
+'tagsecure'		Do not open remote files using tag commands
 'termresize'		Method for handling terminal resize events.
 'termsync'		Enable support for terminal DEC 2026 sync mode.
 'winhighlight'		Window-local highlight group mappings.
