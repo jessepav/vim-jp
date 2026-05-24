@@ -477,7 +477,7 @@ gui_mch_init(void)
 #ifdef FEAT_GUI_TABLINE
     gui.tabline = gtk_notebook_new();
     gtk_notebook_set_show_border(GTK_NOTEBOOK(gui.tabline), FALSE);
-    gtk_notebook_set_show_tabs(GTK_NOTEBOOK(gui.tabline), FALSE);
+    gtk_notebook_set_show_tabs(GTK_NOTEBOOK(gui.tabline), TRUE);
     gtk_notebook_set_scrollable(GTK_NOTEBOOK(gui.tabline), TRUE);
     gtk_widget_set_visible(gui.tabline, FALSE);
     gtk_box_append(GTK_BOX(vbox), gui.tabline);
@@ -528,7 +528,10 @@ gui_mch_init(void)
 			 G_CALLBACK(key_press_event), NULL);
 	g_signal_connect(key_ctrl, "key-released",
 			 G_CALLBACK(key_release_event), NULL);
-	gtk_widget_add_controller(gui.mainwin, key_ctrl);
+	gtk_widget_add_controller(gui.drawarea, key_ctrl);
+#ifdef FEAT_XIM
+	xim_init();
+#endif
     }
 
     {
@@ -769,15 +772,9 @@ gui_mch_set_shellsize(int width, int height,
 	int base_width UNUSED, int base_height UNUSED,
 	int direction UNUSED)
 {
-    // Only set window size if it hasn't been shown yet (initial sizing).
-    // After that, the window size is controlled by the user/WM and
-    // Vim adapts to it via form_size_allocate -> gui_resize_shell.
-    if (!gtk_widget_get_realized(gui.mainwin))
-    {
-	width += get_menu_tool_width();
-	height += get_menu_tool_height();
-	gtk_window_set_default_size(GTK_WINDOW(gui.mainwin), width, height);
-    }
+    width += get_menu_tool_width();
+    height += get_menu_tool_height();
+    gtk_window_set_default_size(GTK_WINDOW(gui.mainwin), width, height);
 }
 
     void
@@ -1102,6 +1099,10 @@ gui_mch_init_font(char_u *font_name, int fontset UNUSED)
 
     get_styled_font_variants();
     ascii_glyph_table_init();
+
+    // im window position depends on cursor size which depends on font metrics
+    // update the position after we've initialized font
+    im_set_position(gui.row, gui.col);
 
     return OK;
 }
@@ -1859,15 +1860,14 @@ drawarea_realize_cb(GtkWidget *widget UNUSED, gpointer data UNUSED)
     gui.surface = create_backing_surface(w, h);
 
     gui_mch_new_colors();
-
-#ifdef FEAT_XIM
-    xim_init();
-#endif
 }
 
     static void
 drawarea_unrealize_cb(GtkWidget *widget UNUSED, gpointer data UNUSED)
 {
+#ifdef FEAT_XIM
+    im_shutdown();
+#endif
     if (gui.surface != NULL)
     {
 	cairo_surface_destroy(gui.surface);
@@ -2322,7 +2322,7 @@ gui_mch_update_tabline(void)
 	    gtk_box_append(GTK_BOX(event_box), label);
 	    gtk_widget_set_visible(label, TRUE);
 	    gtk_notebook_insert_page(GTK_NOTEBOOK(gui.tabline),
-		    page, event_box, nr++);
+		    page, event_box, nr);
 	    gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(gui.tabline),
 		    page, TRUE);
 	}
