@@ -597,13 +597,19 @@ CC = gcc
 #CFLAGS = -O -Olimit 2000
 #CFLAGS = -O -FOlimit,2000
 
+# Add $(FORTIFY_CFLAGS) to optimizing example lines below: at higher levels
+# (the compiler default with -O) the buffer overflow check aborts Vim on the
+# "x[1] but actually longer" struct-hack arrays (e.g. dictitem di_key).
+# configure adds this automatically; these examples bypass it.
+FORTIFY_CFLAGS = -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
+
 # Often used for GCC: mixed optimizing, lot of optimizing, debugging
-#CFLAGS = -g -O2 -fno-strength-reduce -Wall -Wshadow -Wmissing-prototypes
-#CFLAGS = -g -O2 -fno-strength-reduce -Wall -Wmissing-prototypes
+#CFLAGS = -g -O2 -fno-strength-reduce -Wall -Wshadow -Wmissing-prototypes $(FORTIFY_CFLAGS)
+#CFLAGS = -g -O2 -fno-strength-reduce -Wall -Wmissing-prototypes $(FORTIFY_CFLAGS)
 #CFLAGS = -g -Wall -Wmissing-prototypes
-#CFLAGS = -O6 -fno-strength-reduce -Wall -Wshadow -Wmissing-prototypes
+#CFLAGS = -O6 -fno-strength-reduce -Wall -Wshadow -Wmissing-prototypes $(FORTIFY_CFLAGS)
 #CFLAGS = -g -DDEBUG -Wall -Wshadow -Wmissing-prototypes
-#CFLAGS = -g -O2 '-DSTARTUPTIME="vimstartup"' -fno-strength-reduce -Wall -Wmissing-prototypes
+#CFLAGS = -g -O2 '-DSTARTUPTIME="vimstartup"' -fno-strength-reduce -Wall -Wmissing-prototypes $(FORTIFY_CFLAGS)
 
 # Use this with GCC to check for mistakes, unused arguments, etc.
 # Note: If you use -Wextra and get warnings in GTK code about function
@@ -1235,12 +1241,14 @@ GTK_BUNDLE	=
 ### GTK4 GUI
 GTK4_SRC	= gui.c gui_gtk4.c gui_gtk4_f.c \
 			gui_gtk4_cb.c \
-		  	gui_gtk4_da.c \
+			gui_gtk4_da.c \
+			gui_beval.o \
 			$(GRESOURCE_SRC)
 GTK4_OBJ	= objects/gui.o objects/gui_gtk4.o \
 			objects/gui_gtk4_f.o \
 			objects/gui_gtk4_cb.o \
 			objects/gui_gtk4_da.o \
+			objects/gui_beval.o \
 			$(GRESOURCE_OBJ)
 GTK4_DEFS	= -DFEAT_GUI_GTK $(NARROW_PROTO)
 GTK4_IPATH	= $(GUI_INC_LOC)
