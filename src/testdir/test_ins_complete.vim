@@ -5976,6 +5976,69 @@ func Test_autocompletedelay()
   call StopVimInTerminal(buf)
 endfunc
 
+func Run_test_autocompletedelay_ctrl_g_U(delay1, delay2)
+  new
+  call setline(1, 'foo bar baz')
+  inoremap <buffer> ( ()<C-g>U
+  set autocomplete autocompletedelay=200
+
+  call timer_start(a:delay1, { -> feedkeys('(', 't') })
+  call timer_start(a:delay2, { -> feedkeys("\<Left>a\<Esc>", 't') })
+  call feedkeys('ob', 'tx!')
+  call assert_equal(['foo bar baz', 'b(a)'], getline(1, '$'))
+  undo
+  call assert_equal(['foo bar baz'], getline(1, '$'))
+
+  set autocomplete& autocompletedelay&
+  bwipe!
+endfunc
+
+func Test_autocompletedelay_ctrl_g_U()
+  " '(' typed after 'autocompletedelay' expires
+  call Run_test_autocompletedelay_ctrl_g_U(250, 500)
+  " '(' typed before 'autocompletedelay' expires
+  call Run_test_autocompletedelay_ctrl_g_U(150, 500)
+endfunc
+
+func Run_test_autocompletedelay_ctrl_k(delay1, delay2)
+  new
+  call setline(1, 'foo bar baz')
+  set autocomplete autocompletedelay=200
+
+  call timer_start(a:delay1, { -> feedkeys("\<C-K>", 't') })
+  call timer_start(a:delay2, { -> feedkeys(".,\<Esc>", 't') })
+  call feedkeys('ob', 'tx!')
+  call assert_equal(['foo bar baz', 'b…'], getline(1, '$'))
+
+  set autocomplete& autocompletedelay&
+  bwipe!
+endfunc
+
+func Test_autocompletedelay_ctrl_k()
+  " Ctrl-K typed after 'autocompletedelay' expires
+  call Run_test_autocompletedelay_ctrl_k(250, 500)
+  " Ctrl-K typed before 'autocompletedelay' expires
+  call Run_test_autocompletedelay_ctrl_k(150, 500)
+endfunc
+
+func Test_autocompletedelay_no_record()
+  " The K_COMPLETE_DELAY pseudo key must not be recorded into a register while
+  " recording a macro, like K_CURSORHOLD.
+  new
+  call setline(1, 'foobar')
+  set autocomplete autocompletedelay=100
+
+  let @a = ''
+  " Type a char that arms the delay, idle past 'autocompletedelay' so a
+  " K_COMPLETE_DELAY would be injected, then end Insert mode and stop recording.
+  call timer_start(200, { -> feedkeys("\<Esc>q", 't') })
+  call feedkeys("qaSf", 'tx!')
+  call assert_equal("Sf\<Esc>", @a)
+
+  set autocomplete& autocompletedelay&
+  bwipe!
+endfunc
+
 " Preinsert longest prefix when autocomplete
 func Test_autocomplete_longest()
   func GetLine()
