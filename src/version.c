@@ -462,6 +462,11 @@ static char *(features[]) =
 #else
 	"-packages",
 #endif
+#ifdef FEAT_PRINT_PANGO
+	"+pango",
+#else
+	"-pango",
+#endif
 	"+path_extra",
 #ifdef FEAT_PERL
 # ifdef DYNAMIC_PERL
@@ -758,6 +763,20 @@ static char *(features[]) =
 
 static int included_patches[] =
 {   /* Add new patch number below this line */
+/**/
+    901,
+/**/
+    900,
+/**/
+    899,
+/**/
+    898,
+/**/
+    897,
+/**/
+    896,
+/**/
+    895,
 /**/
     894,
 /**/
