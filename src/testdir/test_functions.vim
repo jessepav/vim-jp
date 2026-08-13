@@ -253,7 +253,6 @@ func Test_strtrans()
   call assert_equal('^A^_^?', strtrans("\x01\x1f\x7f"))
   " an unprintable byte above 0x7f uses the meta notation
   call assert_equal('| ', strtrans("\xa0"))
-  " a printable high byte is unchanged
   call assert_equal("\xe9", strtrans("\xe9"))
   call assert_equal("x^B\xe9| y", strtrans("x\x02\xe9\xa0y"))
   set encoding=utf-8
@@ -1281,9 +1280,7 @@ func Test_match_list_changed_while_matching()
   unlet g:mlist g:removed
 endfunc
 
-" Same for join() and string(): stringifying an item can run the string()
-" method of an object, which must not be able to free the item the loop is
-" standing on.
+" Same for join() and string().
 func Test_join_list_changed_while_stringified()
   let lines =<< trim END
     vim9script
@@ -1309,9 +1306,8 @@ func Test_join_list_changed_while_stringified()
   unlet g:jlist g:removed
 endfunc
 
-" Same for a dict: stringifying a value can run the string() method of an
-" object, which must not be able to remove an item and free it, or grow the
-" dict and reallocate the hash table, while it is being iterated over.
+" Same for a dict, where the item can also be added and reallocate the
+" hash table.
 func Test_dict_changed_while_stringified()
   let lines =<< trim END
     vim9script
