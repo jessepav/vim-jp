@@ -252,6 +252,8 @@ static buf_T	  *compl_curr_buf = NULL;  // buf where completion is active
 // longer fixed timeout is used (COMPL_FUNC_TIMEOUT_MS or
 // COMPL_FUNC_TIMEOUT_NON_KW_MS). - girish
 static int	  compl_autocomplete = FALSE;	    // whether autocompletion is active
+static bool	  compl_autostarted = false;	    // Vim started this completion
+static bool	  compl_autostart_pending = false;  // the trigger armed one
 static bool	  compl_autocomplete_pending = false;
 #ifdef ELAPSED_FUNC
 static elapsed_T  compl_autocomplete_start_tv;	    // when the delay was armed
@@ -331,6 +333,7 @@ static void ins_compl_add_dict(dict_T *dict);
 static int get_userdefined_compl_info(colnr_T curs_col, callback_T *cb, int *startcol);
 static void get_cpt_func_completion_matches(callback_T *cb);
 static callback_T *get_callback_if_cpt_func(char_u *p, int idx);
+static void fill_complete_info_dict(dict_T *di, compl_T *match, int add_match);
 #endif
 static int setup_cpt_sources(void);
 static int is_cpt_func_refresh_always(void);
@@ -617,6 +620,23 @@ match_at_original_text(compl_T *match)
 is_first_match(compl_T *match)
 {
     return match == compl_first_match;
+}
+
+/*
+ * Return the entry holding the original text, NULL if not found.
+ * It is the first item, or the last one for backward completion.
+ */
+    static compl_T *
+find_original_text_match(void)
+{
+    if (compl_first_match == NULL)
+	return NULL;
+    if (match_at_original_text(compl_first_match))
+	return compl_first_match;
+    if (compl_first_match->cp_prev != NULL
+	    && match_at_original_text(compl_first_match->cp_prev))
+	return compl_first_match->cp_prev;
+    return NULL;
 }
 
 /*
@@ -1490,17 +1510,7 @@ ins_compl_dict_alloc(compl_T *match)
 
     if (dict == NULL)
 	return NULL;
-
-    dict_add_string_len(dict, "word", match->cp_str.string, (int)match->cp_str.length);
-    dict_add_string(dict, "abbr", match->cp_text[CPT_ABBR]);
-    dict_add_string(dict, "menu", match->cp_text[CPT_MENU]);
-    dict_add_string(dict, "kind", match->cp_text[CPT_KIND]);
-    dict_add_string(dict, "info", match->cp_text[CPT_INFO]);
-    if (match->cp_user_data.v_type == VAR_UNKNOWN)
-	dict_add_string_len(dict, "user_data", (char_u *)"", 0);
-    else
-	dict_add_tv(dict, "user_data", &match->cp_user_data);
-
+    fill_complete_info_dict(dict, match, FALSE);
     return dict;
 }
 
@@ -1709,19 +1719,22 @@ set_fuzzy_score(void)
 }
 
 /*
- * Sort completion matches, excluding the node that contains the leader.
+ * Sort completion matches, leaving the entry with the original text in place.
  */
     static void
 sort_compl_match_list(int (*compare)(const void *, const void *))
 {
-    compl_T     *compl;
+    compl_T	*orig_text;
 
     if (!compl_first_match || is_first_match(compl_first_match->cp_next))
 	return;
 
-    compl = compl_first_match->cp_prev;
+    orig_text = find_original_text_match();
+    if (orig_text == NULL)
+	return;
+
     ins_compl_make_linear();
-    if (compl_shows_dir_forward())
+    if (orig_text == compl_first_match)
     {
 	compl_first_match->cp_next->cp_prev = NULL;
 	compl_first_match->cp_next = mergesort_list(compl_first_match->cp_next,
@@ -1730,14 +1743,16 @@ sort_compl_match_list(int (*compare)(const void *, const void *))
     }
     else
     {
-	compl->cp_prev->cp_next = NULL;
+	compl_T	*tail;
+
+	orig_text->cp_prev->cp_next = NULL;
 	compl_first_match = mergesort_list(compl_first_match, cp_get_next,
 		cp_set_next, cp_get_prev, cp_set_prev, compare);
-	compl_T	*tail = compl_first_match;
+	tail = compl_first_match;
 	while (tail->cp_next != NULL)
 	    tail = tail->cp_next;
-	tail->cp_next = compl;
-	compl->cp_prev = tail;
+	tail->cp_next = orig_text;
+	orig_text->cp_prev = tail;
     }
     (void)ins_compl_make_cyclic();
 }
@@ -2452,6 +2467,7 @@ ins_compl_clear(void)
     cpt_sources_clear();
     compl_autocomplete = FALSE;
     compl_from_nonkeyword = FALSE;
+    compl_autostarted = false;
     compl_num_bests = 0;
 #ifdef FEAT_EVAL
     // clear v:completed_item
@@ -2819,6 +2835,7 @@ ins_compl_restart(void)
     cpt_sources_clear();
     compl_autocomplete = FALSE;
     compl_from_nonkeyword = FALSE;
+    compl_autostarted = false;
     compl_num_bests = 0;
 }
 
@@ -2828,30 +2845,20 @@ ins_compl_restart(void)
     static void
 ins_compl_set_original_text(char_u *str, size_t len)
 {
+    compl_T	*match = find_original_text_match();
+    char_u	*p;
+
     // Replace the original text entry.
-    // The CP_ORIGINAL_TEXT flag is either at the first item or might possibly
-    // be at the last item for backward completion
-    if (match_at_original_text(compl_first_match))	// safety check
-    {
-	char_u	*p = vim_strnsave(str, len);
-	if (p != NULL)
-	{
-	    VIM_CLEAR_STRING(compl_first_match->cp_str);
-	    compl_first_match->cp_str.string = p;
-	    compl_first_match->cp_str.length = len;
-	}
-    }
-    else if (compl_first_match->cp_prev != NULL
-	    && match_at_original_text(compl_first_match->cp_prev))
-    {
-	char_u *p = vim_strnsave(str, len);
-	if (p != NULL)
-	{
-	    VIM_CLEAR_STRING(compl_first_match->cp_prev->cp_str);
-	    compl_first_match->cp_prev->cp_str.string = p;
-	    compl_first_match->cp_prev->cp_str.length = len;
-	}
-    }
+    if (match == NULL)
+	return;
+
+    p = vim_strnsave(str, len);
+    if (p == NULL)
+	return;
+
+    VIM_CLEAR_STRING(match->cp_str);
+    match->cp_str.string = p;
+    match->cp_str.length = len;
 }
 
 /*
@@ -3187,6 +3194,7 @@ ins_compl_stop(int c, int prev_mode, int retval)
     }
     compl_autocomplete = FALSE;
     compl_from_nonkeyword = FALSE;
+    compl_autostarted = false;
     compl_num_bests = 0;
     compl_ins_end_col = 0;
 
@@ -4226,11 +4234,13 @@ get_complete_info(list_T *what_list, dict_T *retdict)
 # define CI_WHAT_COMPLETED	    0x10
 # define CI_WHAT_MATCHES		    0x20
 # define CI_WHAT_PREINSERTED_TEXT    0x40
+# define CI_WHAT_AUTO		    0x80
 # define CI_WHAT_ALL		    0xff
     int		what_flag;
 
     if (what_list == NULL)
-	what_flag = CI_WHAT_ALL & ~(CI_WHAT_MATCHES | CI_WHAT_COMPLETED);
+	what_flag = CI_WHAT_ALL
+	    & ~(CI_WHAT_MATCHES | CI_WHAT_COMPLETED | CI_WHAT_AUTO);
     else
     {
 	what_flag = 0;
@@ -4253,6 +4263,8 @@ get_complete_info(list_T *what_list, dict_T *retdict)
 		what_flag |= CI_WHAT_PREINSERTED_TEXT;
 	    else if (STRCMP(what, "matches") == 0)
 		what_flag |= CI_WHAT_MATCHES;
+	    else if (STRCMP(what, "auto") == 0)
+		what_flag |= CI_WHAT_AUTO;
 	}
     }
 
@@ -4266,6 +4278,9 @@ get_complete_info(list_T *what_list, dict_T *retdict)
 
     if (ret == OK && (what_flag & CI_WHAT_PUM_VISIBLE))
 	ret = dict_add_number(retdict, "pum_visible", pum_visible());
+
+    if (ret == OK && (what_flag & CI_WHAT_AUTO))
+	ret = dict_add_number(retdict, "auto", compl_autostarted);
 
     if (ret == OK && (what_flag & CI_WHAT_PREINSERTED_TEXT))
     {
@@ -7419,6 +7434,9 @@ ins_complete(int c, int enable_pum)
 
     if (!compl_started)
     {
+	// Only what the automatic trigger armed counts as started by Vim.
+	compl_autostarted = compl_autostart_pending;
+	compl_autostart_pending = false;
 	if (ins_compl_start() == FAIL)
 	    return FAIL;
     }
@@ -7500,6 +7518,25 @@ ins_compl_enable_autocomplete(void)
     compl_autocomplete = TRUE;
     compl_get_longest = FALSE;
 #endif
+}
+
+/*
+ * Remember that Vim is about to start a completion by itself, rather than
+ * because a key was typed to ask for one.
+ */
+    void
+ins_compl_arm_autostart(void)
+{
+    compl_autostart_pending = true;
+}
+
+/*
+ * Forget what the automatic trigger armed, another key was typed since.
+ */
+    void
+ins_compl_disarm_autostart(void)
+{
+    compl_autostart_pending = false;
 }
 
 /*
