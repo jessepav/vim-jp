@@ -9300,7 +9300,7 @@ find_some_match(typval_T *argvars, typval_T *rettv, matchtype_T type)
 		    if (regmatch.endp[i] == NULL)
 		    {
 			if (list_append_string(rettv->vval.v_list,
-						     (char_u *)"", 0) == FAIL)
+							    NULL, 0) == FAIL)
 			    break;
 		    }
 		    else if (list_append_string(rettv->vval.v_list,
