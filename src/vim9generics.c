@@ -202,7 +202,7 @@ skip_generic_func_type_args(char_u **argp)
  * Returns:
  *   A newly allocated string with the combined function name and type
  *   arguments, or NULL if there is a syntax error in the generic type
- *   arguments.
+ *   arguments or if there is an allocation failure.
  *
  * The caller is responsible for freeing the returned string.
  */
@@ -212,17 +212,25 @@ append_generic_func_type_args(
     size_t	namelen,
     char_u	**argp)
 {
-    char_u *p = generic_func_find_close_bracket(*argp);
+    char_u	*p = generic_func_find_close_bracket(*argp);
+    size_t	argslen;
+    char_u	*name;
 
     if (p == NULL)
 	return NULL;
 
-    vim_strncpy(IObuff, funcname, namelen);
-    STRNCAT(IObuff, *argp, p - *argp + 1);
+    // The type arguments can be of any length, do not use IObuff.
+    argslen = (size_t)(p - *argp) + 1;
+    name = alloc(namelen + argslen + 1);
+    if (name == NULL)
+	return NULL;
+    mch_memmove(name, funcname, namelen);
+    mch_memmove(name + namelen, *argp, argslen);
+    name[namelen + argslen] = NUL;
 
     *argp = p + 1;
 
-    return vim_strsave(IObuff);
+    return name;
 }
 
 /*
@@ -426,7 +434,8 @@ generic_name_exists(
     {
 	generic_T *generic = &((generic_T *)gfatab->gfat_args.ga_data)[i];
 
-	if (STRNCMP(gt_name, generic->gt_name, name_len) == 0)
+	if (STRNCMP(gt_name, generic->gt_name, name_len) == 0
+				&& generic->gt_name[name_len] == NUL)
 	{
 	    semsg(_(e_duplicate_type_var_name_str), gt_name);
 	    return TRUE;
@@ -909,10 +918,17 @@ generic_func_copy_types(ufunc_T *fp, ufunc_T *new_fp)
 					&& ft->tt_argcount > i
 						    ? &ft->tt_args[i] : NULL);
 
-    // Update the vararg type if it uses generic types
+    // Update the vararg type if it uses generic types.  It is the last
+    // argument of the function type.
     if (fp->uf_va_type != NULL)
+    {
+	int	va_idx = fp->uf_args.ga_len;
+
 	update_generic_type(fp, new_fp, fp->uf_va_type, &new_fp->uf_va_type,
-			    NULL);
+			    ft != NULL && ft->tt_args != NULL
+					&& ft->tt_argcount > va_idx
+						? &ft->tt_args[va_idx] : NULL);
+    }
 
     // Update the return type if it is a generic type
     if (fp->uf_ret_type != NULL)
@@ -1273,7 +1289,8 @@ find_generic_type_in_ufunc(char_u *gt_name, size_t name_len, ufunc_T *ufunc)
 	generic_T *generic;
 
 	generic = ((generic_T *)ufunc->uf_generic_args) + i;
-	if (STRNCMP(generic->gt_name, gt_name, name_len) == 0)
+	if (STRNCMP(generic->gt_name, gt_name, name_len) == 0
+				&& generic->gt_name[name_len] == NUL)
 	{
 	    type_T *type = generic->gt_type;
 	    return type;
