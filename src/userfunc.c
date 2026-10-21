@@ -1926,6 +1926,8 @@ errret:
     {
 	vim_free(fp->uf_arg_types);
 	vim_free(fp->uf_name_exp);
+	vim_free(fp->uf_va_name);
+	clear_type_list(&fp->uf_type_list);
 	vim_free(fp);
     }
     vim_free(pt);
@@ -2701,7 +2703,9 @@ func_remove(ufunc_T *fp)
 	return FALSE;
 
     hi = hash_find(&func_hashtab, UF2HIKEY(fp));
-    if (HASHITEM_EMPTY(hi))
+    // Another function with the same name may be in the table, e.g. a global
+    // function with the name of a class method, do not remove it.
+    if (HASHITEM_EMPTY(hi) || HI2UF(hi) != fp)
 	return FALSE;
 
     // When there is a def-function index do not actually remove the
