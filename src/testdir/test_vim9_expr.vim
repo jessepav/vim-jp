@@ -2342,6 +2342,9 @@ def Test_expr8()
   v9.CheckDefAndScriptFailure(["var x = <nr>123"], 'E1010:', 1)
   v9.CheckDefFailure(["var x = <number>"], 'E1097:', 3)
   v9.CheckDefFailure(["var x = <number>string(1)"], 'E1012:', 1)
+  # A failed type check must free the value, a leak is only detected with
+  # valgrind or ASAN
+  v9.CheckScriptFailure(['vim9script', "var x = <number>'a'"], 'E1012: Type mismatch; expected number but got string', 2)
   v9.CheckScriptFailure(['vim9script', "var x = <number>"], 'E15:', 2)
   v9.CheckDefAndScriptFailure(["var x = <number >123"], 'E1068:', 1)
   v9.CheckDefAndScriptFailure(["var x = <number 123"], 'E1104:', 1)
@@ -4534,5 +4537,17 @@ func Test_expr_fails()
   call v9.CheckDefAndScriptFailure(["echo Func01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789()"], ['E1011:', 'E117:'], 1)
   call v9.CheckDefAndScriptFailure(["echo doesnotexist()"], 'E117:', 1)
 endfunc
+
+" Deeply nested parentheses must not run out of stack when compiling
+def Test_expr_deeply_nested_parens()
+  var lines = [
+    'vim9script',
+    'def F()',
+    '  var x = ' .. repeat('(', 10000) .. '1' .. repeat(')', 10000),
+    'enddef',
+    'defcompile F',
+  ]
+  v9.CheckSourceFailure(lines, 'E1169:')
+enddef
 
 " vim: shiftwidth=2 sts=2 expandtab

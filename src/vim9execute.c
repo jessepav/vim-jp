@@ -2812,6 +2812,11 @@ execute_unletindex(isn_T *iptr, ectx_T *ectx)
 	    }
 	}
     }
+    else if (tv_dest->v_type == VAR_TUPLE)
+    {
+	status = FAIL;
+	emsg(_(e_tuple_is_immutable));
+    }
     else
     {
 	status = FAIL;
@@ -2894,6 +2899,12 @@ execute_unletrange(isn_T *iptr, ectx_T *ectx)
 					   tv_idx2->v_type != VAR_SPECIAL, n2);
 	    }
 	}
+    }
+    else if (tv_dest->v_type == VAR_TUPLE)
+    {
+	status = FAIL;
+	SOURCING_LNUM = iptr->isn_lnum;
+	emsg(_(e_cannot_slice_tuple));
     }
     else
     {

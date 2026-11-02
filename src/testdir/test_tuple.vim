@@ -335,6 +335,25 @@ func Test_tuple_slice()
   call v9.CheckSourceLegacyAndVim9Success(lines)
 endfunc
 
+" Test for the type of a tuple slice
+def Test_tuple_slice_type()
+  var lines =<< trim END
+    var s: tuple<string> = (1, 'a')[1 :]
+    assert_equal(('a',), s)
+    assert_equal('tuple<string>', typename((1, 'a')[1 :]))
+    var v: tuple<...list<number>> = (1, 2, 3)
+    var w: tuple<...list<number>> = v[1 :]
+    assert_equal((2, 3), w)
+  END
+  v9.CheckSourceDefAndScriptSuccess(lines)
+
+  lines =<< trim END
+    var t: tuple<number, string> = (1, 'a')
+    var s: tuple<number, string> = t[1 :]
+  END
+  v9.CheckSourceDefExecAndScriptFailure(lines, 'E1012: Type mismatch; expected tuple<number, string> but got tuple<string>')
+enddef
+
 " Test for concatenating tuples
 func Test_tuple_concatenate()
   let lines =<< trim END
@@ -592,6 +611,36 @@ func Test_tuple_compare()
         \ 'E1518: Invalid operation for Tuple',
         \ 'E1518: Invalid operation for Tuple'])
 endfunc
+
+" Test for concatenating a variadic tuple with a tuple literal.  The type of
+" the literal must also be checked when not in a compiled function.
+def Test_tuple_concatenate_variadic_with_literal()
+  var lines =<< trim END
+    var t: tuple<...list<number>> = (1, 2)
+    t = t + (3,)
+  END
+  v9.CheckSourceDefExecAndScriptFailure(lines, 'E1540: Cannot use a variadic tuple in concatenation', 2)
+
+  lines =<< trim END
+    var t: tuple<...list<number>> = ()
+    t = t + ('a', 'b')
+  END
+  v9.CheckSourceDefExecAndScriptFailure(lines, 'E1540: Cannot use a variadic tuple in concatenation', 2)
+
+  # A tuple with the same variadic type, an empty tuple and a tuple without a
+  # variadic type can be used
+  lines =<< trim END
+    var t: tuple<...list<number>> = (1, 2)
+    var u: tuple<...list<number>> = (3,)
+    t = t + u
+    t = t + ()
+    assert_equal((1, 2, 3), t)
+    var f: tuple<number, number> = (1, 2)
+    assert_equal((1, 2, 3), f + (3,))
+    assert_equal((1, 2, 3), (1,) + (2, 3))
+  END
+  v9.CheckSourceDefAndScriptSuccess(lines)
+enddef
 
 " Test for assigning multiple items from a tuple
 func Test_multi_assign_from_tuple()
@@ -3712,6 +3761,13 @@ func Test_tuple_modify_item_error()
   END
   call v9.CheckSourceLegacyAndVim9Failure(lines, 'E1532: Cannot modify a tuple')
 
+  " with type "any" it is only known at runtime that it is a tuple
+  let lines =<< trim END
+    var t: any = (1, 2)
+    unlet t[0]
+  END
+  call v9.CheckSourceDefExecAndScriptFailure(lines, 'E1532: Cannot modify a tuple', 2)
+
   let lines =<< trim END
     VAR t = (1, 2)
     LET t[0] += 1
@@ -3720,6 +3776,26 @@ func Test_tuple_modify_item_error()
         \ 'E1532: Cannot modify a tuple',
         \ 'E734: Wrong variable type for +=',
         \ 'E1532: Cannot modify a tuple'])
+
+  " removing a range of items
+  let lines =<< trim END
+    VAR t = (1, 2, 3)
+    unlet t[0 : 1]
+  END
+  call v9.CheckSourceLegacyAndVim9Failure(lines, 'E1533: Cannot slice a tuple')
+
+  let lines =<< trim END
+    var t = (1, 2, 3)
+    unlet t[1 :]
+  END
+  call v9.CheckSourceDefFailure(lines, 'E1533: Cannot slice a tuple', 2)
+
+  " with type "any" it is only known at runtime that it is a tuple
+  let lines =<< trim END
+    var t: any = (1, 2, 3)
+    unlet t[0 : 1]
+  END
+  call v9.CheckSourceDefExecAndScriptFailure(lines, 'E1533: Cannot slice a tuple', 2)
 endfunc
 
 " Test for using a tuple as a Dict key
