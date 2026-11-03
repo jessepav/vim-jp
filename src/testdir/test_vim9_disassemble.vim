@@ -3166,6 +3166,78 @@ def Test_disassemble_dict_stack()
         res)
 enddef
 
+" A dict member or object method that is called, indexed, used with "->" or
+" followed by another member in a skipped part of an expression does not
+" generate instructions.
+def Test_disassemble_skipped_member_call()
+  var lines =<< trim END
+    vim9script
+    class A
+      def True(): bool
+        return true
+      enddef
+    endclass
+    def SkippedMember(): list<bool>
+      var d = {Fn: () => true, l: [1], sub: {x: 1}}
+      var o = A.new()
+      return [true || d.Fn(),
+          true || d.l->len() > 0,
+          true || d.l[0] == 1,
+          true || d.sub.x == 1,
+          false && d.Fn(),
+          true || o.True()]
+    enddef
+    def SkippedIf(): string
+      var o = A.new()
+      if has('eval') || o.True()
+        return 'works'
+      endif
+      return 'no'
+    enddef
+    assert_equal([true, true, true, true, false, true], SkippedMember())
+    assert_equal('works', SkippedIf())
+    g:instr = execute('disassemble SkippedMember')
+    g:instr_if = execute('disassemble SkippedIf')
+  END
+  v9.CheckScriptSuccess(lines)
+  assert_match('<SNR>\d\+_SkippedMember\_s*' ..
+    'var d = {Fn: () => true, l: \[1\], sub: {x: 1}}\_s*' ..
+    '.*' ..
+    '\d\+ STORE $0\_s*' ..
+    'var o = A.new()\_s*' ..
+    '\d\+ DCALL new(argc 0)\_s*' ..
+    '\d\+ STORE $1\_s*' ..
+    'return \[true || d.Fn(),\_s*' ..
+    '\d\+ PUSH true\_s*' ..
+    'true || d.l->len() > 0,\_s*' ..
+    '\d\+ PUSH true\_s*' ..
+    'true || d.l\[0\] == 1,\_s*' ..
+    '\d\+ PUSH true\_s*' ..
+    'true || d.sub.x == 1,\_s*' ..
+    '\d\+ PUSH true\_s*' ..
+    'false && d.Fn(),\_s*' ..
+    '\d\+ PUSH false\_s*' ..
+    'true || o.True()\]\_s*' ..
+    '\d\+ PUSH true\_s*' ..
+    '\d\+ NEWLIST size 6\_s*' ..
+    '\d\+ RETURN', g:instr)
+  assert_match('<SNR>\d\+_SkippedIf\_s*' ..
+    'var o = A.new()\_s*' ..
+    '0 DCALL new(argc 0)\_s*' ..
+    '1 STORE $0\_s*' ..
+    'if has(''eval'') || o.True()\_s*' ..
+    '2 PUSH true\_s*' ..
+    '3 JUMP_IF_FALSE -> 6\_s*' ..
+    'return ''works''\_s*' ..
+    '4 PUSHS "works"\_s*' ..
+    '5 RETURN\_s*' ..
+    'endif\_s*' ..
+    'return ''no''\_s*' ..
+    '6 PUSHS "no"\_s*' ..
+    '7 RETURN', g:instr_if)
+  unlet g:instr g:instr_if
+enddef
+
 def s:RetLegacy(): string
   legacy return "yes"
 enddef
@@ -4208,6 +4280,53 @@ def Test_disassemble_tuple_unpack()
     '6 SLICE 2\_s*' ..
     '7 STORE $2\_s*' ..
     '8 RETURN void', g:instr)
+
+  # a compound operator with a tuple: the item type is known for a variadic
+  # tuple, a type check is needed for a tuple with more than one item
+  lines =<< trim END
+    vim9script
+    def Fn(v: tuple<...list<number>>)
+      var x = 1
+      var y = 2
+      [x, y] += (10, 20)
+      [x, y] -= v
+    enddef
+    g:instr = execute('disassemble Fn')
+  END
+  v9.CheckScriptSuccess(lines)
+  assert_match('<SNR>\d\+_Fn\_s*' ..
+    'var x = 1\_s*' ..
+    '0 STORE 1 in $0\_s*' ..
+    'var y = 2\_s*' ..
+    '1 STORE 2 in $1\_s*' ..
+    '\[x, y\] += (10, 20)\_s*' ..
+    '2 PUSHNR 10\_s*' ..
+    '3 PUSHNR 20\_s*' ..
+    '4 NEWTUPLE size 2\_s*' ..
+    '5 LOAD $0\_s*' ..
+    '6 ITEM 0 with op\_s*' ..
+    '7 CHECKTYPE number stack\[-1\]\_s*' ..
+    '8 OPANY +\_s*' ..
+    '9 STORE $0\_s*' ..
+    '10 LOAD $1\_s*' ..
+    '11 ITEM 1 with op\_s*' ..
+    '12 CHECKTYPE number stack\[-1\]\_s*' ..
+    '13 OPANY +\_s*' ..
+    '14 STORE $1\_s*' ..
+    '15 DROP\_s*' ..
+    '\[x, y\] -= v\_s*' ..
+    '16 LOAD arg\[-1\]\_s*' ..
+    '17 CHECKLEN 2\_s*' ..
+    '18 LOAD $0\_s*' ..
+    '19 ITEM 0 with op\_s*' ..
+    '20 OPNR -\_s*' ..
+    '21 STORE $0\_s*' ..
+    '22 LOAD $1\_s*' ..
+    '23 ITEM 1 with op\_s*' ..
+    '24 OPNR -\_s*' ..
+    '25 STORE $1\_s*' ..
+    '26 DROP\_s*' ..
+    '27 RETURN void', g:instr)
   unlet g:instr
 enddef
 
