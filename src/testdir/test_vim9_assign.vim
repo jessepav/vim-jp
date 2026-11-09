@@ -1118,9 +1118,9 @@ def Test_assignment_list()
   assert_equal(['sdf', 'asdf', 'end'], list3)
 
   v9.CheckDefExecFailure(['var ll = [1, 2, 3]', 'll[-4] = 6'], 'E684:')
-  v9.CheckDefExecFailure(['var ll = [1, 2, 3]', 'unlet ll[8 : 9]'], 'E684:')
-  v9.CheckDefExecFailure(['var ll = [1, 2, 3]', 'unlet ll[1 : -9]'], 'E684:')
-  v9.CheckDefExecFailure(['var ll = [1, 2, 3]', 'unlet ll[2 : 1]'], 'E684:')
+  v9.CheckDefExecAndScriptFailure(['var ll = [1, 2, 3]', 'unlet ll[8 : 9]'], 'E684:')
+  v9.CheckDefExecAndScriptFailure(['var ll = [1, 2, 3]', 'unlet ll[1 : -9]'], 'E684:')
+  v9.CheckDefExecAndScriptFailure(['var ll = [1, 2, 3]', 'unlet ll[2 : 1]'], 'E684:')
 
   # type becomes list<any>
   var somelist = rand() > 0 ? [1, 2, 3] : ['a', 'b', 'c']
@@ -1974,6 +1974,25 @@ def Test_assign_dict_with_op()
     var dab = {a: ['b']}
     dab.a[0] ..= 'c'
     assert_equal({a: ['bc']}, dab)
+  END
+  v9.CheckDefAndScriptSuccess(lines)
+enddef
+
+" A type error in a slice assignment leaves the list unchanged
+def Test_assign_list_slice_type_error()
+  var lines =<< trim END
+    var l: list<number> = [1, 2, 3]
+    var bad: list<any> = [7, 'x']
+    try
+      l[0 : 1] = bad
+    catch /E1012:/
+    endtry
+    assert_equal([1, 2, 3], l)
+    try
+      l[1 :] = bad
+    catch /E1012:/
+    endtry
+    assert_equal([1, 2, 3], l)
   END
   v9.CheckDefAndScriptSuccess(lines)
 enddef
@@ -3524,6 +3543,25 @@ def Test_dict_item_assign()
   v9.CheckSourceSuccess(lines)
 enddef
 
+" In a :def function the index is evaluated before the Dict item is used,
+" removing the item in the index expression gives an error.
+def Test_dict_item_assign_index_removes_item()
+  var lines =<< trim END
+    vim9script
+    var d = {a: {b: 1}}
+    def RemoveA(): string
+      remove(d, 'a')
+      return 'b'
+    enddef
+    def Assign()
+      d.a[RemoveA()] = 2
+    enddef
+    assert_fails('Assign()', 'E716: Key not present in Dictionary: "a"')
+    assert_equal({}, d)
+  END
+  v9.CheckSourceSuccess(lines)
+enddef
+
 def Test_class_assign()
   var lines =<< trim END
     vim9script
@@ -4113,6 +4151,69 @@ def Test_nested_type_check()
     l[0][1][0] = [{x: 20}]
   END
   v9.CheckScriptFailure(lines, 'E1012: Type mismatch; expected list<number> but got list<dict<number>>', 6)
+enddef
+
+" A store into an inner typed Dict is checked at run time, also when the
+" compiled store is not typed (the nested form compiles to STOREINDEX any)
+def Test_dict_nested_typed_store_check()
+  var lines =<< trim END
+    var d: dict<dict<number>> = {a: {b: 1}}
+    var s: any = 'str'
+    d.a.b = s
+  END
+  v9.CheckDefExecAndScriptFailure(lines, 'E1012:', 3)
+
+  lines =<< trim END
+    var d: dict<dict<number>> = {a: {b: 1}}
+    var s: any = 'str'
+    d['a']['b'] = s
+  END
+  v9.CheckDefExecAndScriptFailure(lines, 'E1012:', 3)
+
+  lines =<< trim END
+    var d: dict<dict<number>> = {a: {b: 1}}
+    var f: any = 1.5
+    d.a.b += f
+  END
+  v9.CheckDefExecAndScriptFailure(lines, 'E1012:', 3)
+
+  lines =<< trim END
+    var l: list<dict<number>> = [{b: 1}]
+    var s: any = 'str'
+    l[0].b = s
+  END
+  v9.CheckDefExecAndScriptFailure(lines, 'E1012:', 3)
+
+  # the value is unchanged after the error
+  lines =<< trim END
+    var d: dict<dict<number>> = {a: {b: 1}}
+    var s: any = 'str'
+    try
+      d.a.b = s
+    catch /E1012:/
+    endtry
+    assert_equal({a: {b: 1}}, d)
+  END
+  v9.CheckDefAndScriptSuccess(lines)
+enddef
+
+" Compound assignment on an item of a Dict in a List and of a nested Dict
+" gives the same result as the long form, in all three modes
+def Test_dict_compound_assign_nested_forms()
+  var lines =<< trim END
+    VAR d = {'k': 7, 'a': {'b': 7}}
+    VAR l = [{'k': 7}]
+    LET d.a.b += 3
+    LET l[0].k -= 3
+    LET d['a']['b'] *= 2
+    call assert_equal({'k': 7, 'a': {'b': 20}}, d)
+    call assert_equal([{'k': 4}], l)
+    LET l[0].k = l[0].k * 5
+    LET d.a.b = d.a.b % 7
+    call assert_equal([{'k': 20}], l)
+    call assert_equal({'b': 6}, d.a)
+  END
+  v9.CheckLegacyAndVim9Success(lines)
 enddef
 
 " vim: ts=8 sw=2 sts=2 expandtab tw=80 fdm=marker
