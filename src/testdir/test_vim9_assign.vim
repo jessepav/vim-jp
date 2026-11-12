@@ -2022,6 +2022,51 @@ def Test_assign_list_with_op()
   v9.CheckDefAndScriptSuccess(lines)
 enddef
 
+" When "+=" fails because of an item type the List is not changed.
+def Test_assign_list_add_wrong_item_type()
+  var lines =<< trim END
+    var l: list<number> = [1]
+    var good: list<any> = [2, 3]
+    l += good
+    assert_equal([1, 2, 3], l)
+
+    var bad: list<any> = [4, 'x']
+    try
+      l += bad
+      assert_report('expected an error')
+    catch /E1012:/
+    endtry
+    assert_equal([1, 2, 3], l)
+  END
+  v9.CheckDefAndScriptSuccess(lines)
+enddef
+
+" "+=" changes a list in place, it must not change a locked or const list.
+def Test_assign_list_add_to_locked_list()
+  var lines =<< trim END
+    vim9script
+    def AddTo(l: list<number>)
+      var x = l
+      x += [2]
+    enddef
+
+    const c = [1]
+    assert_fails('AddTo(c)', 'E741:')
+    assert_equal([1], c)
+
+    var s = [1]
+    lockvar 1 s
+    assert_fails('AddTo(s)', 'E741:')
+    assert_equal([1], s)
+
+    # same at script level
+    var a = s
+    assert_fails('a += [2]', 'E741:')
+    assert_equal([1], s)
+  END
+  v9.CheckScriptSuccess(lines)
+enddef
+
 def Test_assign_with_op_fails()
   var lines =<< trim END
       var s = 'abc'

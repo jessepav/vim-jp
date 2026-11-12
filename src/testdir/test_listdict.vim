@@ -342,6 +342,21 @@ func Test_list_func_remove()
   call assert_equal([], r)
 endfunc
 
+" remove() of a range from a List that has items allocated together with the
+" List and items appended later.
+func Test_list_func_remove_range_mixed_items()
+  let lines =<< trim END
+    VAR l = copy([1, 2])
+    call extend(l, [3, 4, 5])
+    call assert_equal([2, 3, 4], remove(l, 1, 3))
+    call assert_equal([1, 5], l)
+    call add(l, 6)
+    call assert_equal([1, 5, 6], remove(l, 0, -1))
+    call assert_equal([], l)
+  END
+  call v9.CheckLegacyAndVim9Success(lines)
+endfunc
+
 " List add() function
 func Test_list_add()
   let lines =<< trim END
@@ -2141,6 +2156,28 @@ func Test_null_list()
   unlockvar l
 endfunc
 
+" Using "+=" on a null List must create a new List.
+func Test_null_list_add_assign()
+  let g:null_l = test_null_list()
+  let g:other_l = [1]
+  let g:null_l += g:other_l
+  call add(g:null_l, 2)
+  call assert_equal([1, 2], g:null_l)
+  call assert_equal([1], g:other_l)
+  unlet g:null_l g:other_l
+
+  let lines =<< trim END
+    vim9script
+    var a = test_null_list()
+    var b = [1]
+    a += b
+    a->add(2)
+    assert_equal([1, 2], a)
+    assert_equal([1], b)
+  END
+  call v9.CheckScriptSuccess(lines)
+endfunc
+
 " The key/value pairs can be edited and retain references to their values.
 func Test_dict_items_edit_result()
   let shared = [1, 2]
@@ -2354,6 +2391,29 @@ def Test_list_length_as_index()
     l[0] = 10
   END
   v9.CheckDefAndScriptFailure(lines, 'E1012: Type mismatch; expected string but got number', 2)
+
+  # Cannot add an item to a locked List
+  lines =<< trim END
+    vim9script
+    var l = [1]
+    lockvar 1 l
+    l[1] = 2
+  END
+  v9.CheckScriptFailure(lines, 'E1118: Cannot change locked list', 4)
+  lines =<< trim END
+    vim9script
+    const l = [1]
+    l[1] = 2
+  END
+  v9.CheckScriptFailure(lines, 'E1118: Cannot change locked list', 3)
+  lines =<< trim END
+    g:locked_list = [1]
+    lockvar 1 g:locked_list
+    g:locked_list[1] = 2
+  END
+  v9.CheckDefExecFailure(lines, 'E1118: Cannot change locked list', 3)
+  unlockvar g:locked_list
+  unlet g:locked_list
 
   # In legacy script, appending a new item to a list should fail.
   lines =<< trim END
